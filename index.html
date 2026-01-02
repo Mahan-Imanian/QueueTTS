@@ -9,431 +9,344 @@
   </head>
 
   <body>
-    <a class="skip-link" href="#main">Skip to content</a>
+    <a class="skip" href="#main">Skip to content</a>
 
-    <div id="app" class="app">
-      <div class="app__bg" aria-hidden="true"></div>
+    <div class="bg" aria-hidden="true"></div>
 
-      <header class="topbar" role="banner">
-        <div class="topbar__left">
-          <div class="brand">
-            <div class="brand__mark" aria-hidden="true">
-              <svg class="logo" viewBox="0 0 64 64" role="img" aria-label="QueueTTS">
-                <defs>
-                  <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stop-color="currentColor" stop-opacity="0.9"></stop>
-                    <stop offset="1" stop-color="currentColor" stop-opacity="0.5"></stop>
-                  </linearGradient>
-                </defs>
-                <path
-                  class="logo__path"
-                  d="M16 40c4.5 6.5 11 10 20 10 10.5 0 18-5.5 18-15 0-8-5-12.5-14-14l-6-1c-5.5-.9-8-3-8-6.5C26 9 30 6 35.5 6 42 6 47 9 50 14"
-                  fill="none"
-                  stroke="url(#logoGrad)"
-                  stroke-width="3.25"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path
-                  class="logo__path logo__path--2"
-                  d="M14 50h18c8.5 0 14-4.5 14-12 0-7-4.2-10-11.5-11.3l-4.5-.8"
-                  fill="none"
-                  stroke="url(#logoGrad)"
-                  stroke-width="3.25"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </div>
+    <header class="top" role="banner">
+      <div class="brand">
+        <div class="brandMark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="img" aria-label="QueueTTS">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="currentColor" stop-opacity="0.92"></stop>
+                <stop offset="1" stop-color="currentColor" stop-opacity="0.55"></stop>
+              </linearGradient>
+            </defs>
+            <path
+              d="M16 40c4.5 6.5 11 10 20 10 10.5 0 18-5.5 18-15 0-8-5-12.5-14-14l-6-1c-5.5-.9-8-3-8-6.5C26 9 30 6 35.5 6 42 6 47 9 50 14"
+              fill="none"
+              stroke="url(#g)"
+              stroke-width="3.25"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M14 50h18c8.5 0 14-4.5 14-12 0-7-4.2-10-11.5-11.3l-4.5-.8"
+              fill="none"
+              stroke="url(#g)"
+              stroke-width="3.25"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
 
-            <div class="brand__text">
-              <div class="brand__row">
-                <h1 class="brand__name">QueueTTS</h1>
-                <span class="status-chip" id="statusChip" aria-live="polite">
-                  <span class="status-chip__dot" aria-hidden="true"></span>
-                  <span class="status-chip__text" id="statusChipText">Idle</span>
-                </span>
-              </div>
-              <p class="brand__tagline">Local-first text-to-speech queue for articles and pasted text.</p>
-            </div>
-          </div>
-
+        <div class="brandText">
+          <h1 class="brandName">QueueTTS</h1>
+          <p class="brandTag">Local-first text-to-speech queue for articles and pasted text.</p>
           <div class="chips" aria-label="Product constraints">
             <span class="chip" role="note">Static site</span>
             <span class="chip" role="note">Local-first</span>
             <span class="chip" role="note">No tracking</span>
-            <span class="chip chip--kbd" role="note"><span class="kbd">Ctrl</span><span class="kbd">K</span> palette</span>
           </div>
         </div>
+      </div>
 
-        <div class="topbar__right header__actions">
-          <button class="button button--ghost" id="cmdkOpen" type="button" aria-haspopup="dialog">Commands</button>
-          <button class="button button--ghost" id="themeToggle" type="button">Theme</button>
-          <button class="button button--ghost" id="contrastToggle" type="button">High contrast</button>
-          <button class="button button--ghost" id="motionToggle" type="button">Reduce motion</button>
-        </div>
-      </header>
+      <div class="topActions" aria-label="Global actions">
+        <button class="btn btnGhost" type="button" id="themeBtn" aria-label="Theme">Theme</button>
+        <button class="btn btnGhost" type="button" id="contrastBtn" aria-label="High contrast">Contrast</button>
+        <button class="btn btnGhost" type="button" id="motionBtn" aria-label="Reduce motion">Motion</button>
+        <button class="btn btnGhost" type="button" id="cmdBtn" aria-label="Command palette" data-tooltip="Ctrl/⌘ K">Commands</button>
+        <button class="btn btnGhost" type="button" id="helpBtn" aria-label="Keyboard shortcuts" data-tooltip="?">Shortcuts</button>
+      </div>
+    </header>
 
-      <main id="main" class="main" role="main">
-        <section class="hero" aria-label="QueueTTS player">
-          <div class="hero__frame">
-            <div class="hero__mesh" aria-hidden="true"></div>
-            <div class="hero__noise" aria-hidden="true"></div>
+    <main id="main" class="main" role="main">
+      <section class="grid">
+        <div class="col">
+          <section class="panel" aria-label="Playback controls">
+            <header class="panelHead">
+              <h2 class="h2">Playback</h2>
+              <p class="sub">Keyboard-first. Touch-friendly. Local-first.</p>
+            </header>
 
-            <div class="hero__content">
-              <div class="hero__left">
-                <div class="panel panel--glass controls" aria-label="Playback controls">
-                  <div class="panel__head">
-                    <h2 class="panel__title">Playback</h2>
-                    <p class="panel__subtitle">Sentence-accurate navigation with approximate time seeking.</p>
-                  </div>
+            <div class="row">
+              <button class="btn btnPrimary" type="button" id="playBtn">Play</button>
+              <button class="btn btnGhost" type="button" id="prevItemBtn">Prev item</button>
+              <button class="btn btnGhost" type="button" id="nextItemBtn">Next item</button>
+            </div>
 
-                  <div class="controls__left">
-                    <div class="controls__row">
-                      <button class="button button--primary" id="playPause" type="button">Play</button>
-                      <button class="button button--ghost" id="prevItem" type="button">Prev item</button>
-                      <button class="button button--ghost" id="nextItem" type="button">Next item</button>
-                    </div>
+            <div class="row">
+              <button class="btn btnGhost" type="button" id="prevSegBtn" aria-label="Previous sentence">⟵ Sentence</button>
+              <button class="btn btnGhost" type="button" id="nextSegBtn" aria-label="Next sentence">Sentence ⟶</button>
 
-                    <div class="controls__row">
-                      <button class="button button--ghost" id="prevSentence" type="button" aria-label="Previous sentence">⟵ Sentence</button>
-                      <button class="button button--ghost" id="nextSentence" type="button" aria-label="Next sentence">Sentence ⟶</button>
+              <div class="row rowTight" role="group" aria-label="Seek controls">
+                <button class="btn btnGhost" type="button" id="seekBackBtn" data-tooltip="," aria-label="Seek back by skip interval">−</button>
+                <button class="btn btnGhost" type="button" id="seekFwdBtn" data-tooltip="." aria-label="Seek forward by skip interval">+</button>
+                <span class="sep" aria-hidden="true"></span>
+                <button class="btn btnGhost" type="button" data-seek="-10">-10s</button>
+                <button class="btn btnGhost" type="button" data-seek="-15">-15s</button>
+                <button class="btn btnGhost" type="button" data-seek="-30">-30s</button>
+                <span class="sep" aria-hidden="true"></span>
+                <button class="btn btnGhost" type="button" data-seek="10">+10s</button>
+                <button class="btn btnGhost" type="button" data-seek="15">+15s</button>
+                <button class="btn btnGhost" type="button" data-seek="30">+30s</button>
+              </div>
+            </div>
 
-                      <div class="seekers" role="group" aria-label="Seek controls">
-                        <button class="button button--ghost" type="button" data-seek="-10">-10s</button>
-                        <button class="button button--ghost" type="button" data-seek="-15">-15s</button>
-                        <button class="button button--ghost" type="button" data-seek="-30">-30s</button>
-                        <span class="seekers__sep" aria-hidden="true"></span>
-                        <button class="button button--ghost" type="button" data-seek="10">+10s</button>
-                        <button class="button button--ghost" type="button" data-seek="15">+15s</button>
-                        <button class="button button--ghost" type="button" data-seek="30">+30s</button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="controls__right">
-                    <div class="control">
-                      <label for="voiceSearch">Voice</label>
-                      <div class="control__stack">
-                        <input id="voiceSearch" type="text" autocomplete="off" placeholder="Search voices" />
-                        <div class="select-wrap">
-                          <select id="voiceSelect" aria-label="Voice selection"></select>
-                          <div class="select-skeleton hidden" id="voiceSkeleton" aria-hidden="true">
-                            <div class="skeleton-line"></div>
-                            <div class="skeleton-line"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="control">
-                      <label for="rateRange">Rate</label>
-                      <div class="control__stack">
-                        <input id="rateRange" type="range" min="0.75" max="2" step="0.05" />
-                        <div class="rate__ticks" role="group" aria-label="Rate presets">
-                          <button class="pill" type="button" data-rate="0.75">0.75×</button>
-                          <button class="pill" type="button" data-rate="1">1×</button>
-                          <button class="pill" type="button" data-rate="1.25">1.25×</button>
-                          <button class="pill" type="button" data-rate="1.5">1.5×</button>
-                          <button class="pill" type="button" data-rate="2">2×</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="control">
-                      <label for="skipSelect">Skip interval</label>
-                      <select id="skipSelect" aria-label="Skip interval">
-                        <option value="10">10s</option>
-                        <option value="15">15s</option>
-                        <option value="30">30s</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <section class="panel add-panel" aria-label="Add to queue">
-                  <div class="panel__head">
-                    <h2 class="panel__title">Add</h2>
-                    <p class="panel__subtitle">Paste instantly or attempt a URL fetch. No backend.</p>
-                  </div>
-
-                  <div class="add-tabs" role="tablist" aria-label="Add mode">
-                    <button class="tab tab--active" id="tabPaste" type="button" data-mode="paste" role="tab" aria-selected="true" aria-controls="panePaste">Paste text</button>
-                    <button class="tab" id="tabUrl" type="button" data-mode="url" role="tab" aria-selected="false" aria-controls="paneUrl">Add URL</button>
-                  </div>
-
-                  <div class="add-body">
-                    <div class="add-pane" id="panePaste" data-pane="paste" role="tabpanel" aria-labelledby="tabPaste">
-                      <div class="field field--textarea">
-                        <label class="field__label" for="pasteInput">Text</label>
-                        <textarea id="pasteInput" placeholder="Paste article text here…"></textarea>
-                        <div class="field__hint"><span class="kbd">Space</span> play/pause · <span class="kbd">J</span>/<span class="kbd">K</span> sentence · <span class="kbd">,</span>/<span class="kbd">.</span> skip</div>
-                      </div>
-
-                      <div class="add-options">
-                        <div class="field">
-                          <label class="field__label" for="languageHint">Language hint</label>
-                          <input id="languageHint" type="text" placeholder="e.g. en-US" />
-                        </div>
-
-                        <div class="field">
-                          <label class="field__label" for="headingMode">Headings</label>
-                          <select id="headingMode" aria-label="Heading mode">
-                            <option value="cue">Heading cue</option>
-                            <option value="pause">Heading pause</option>
-                            <option value="off">Heading off</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div class="add-actions">
-                        <label class="toggle" for="cleanupToggle">
-                          <input id="cleanupToggle" type="checkbox" checked />
-                          <span>Quick cleanup</span>
-                        </label>
-                        <button class="button button--primary" id="addPaste" type="button">Add to queue</button>
-                      </div>
-                    </div>
-
-                    <div class="add-pane hidden" id="paneUrl" data-pane="url" role="tabpanel" aria-labelledby="tabUrl">
-                      <div class="field">
-                        <label class="field__label" for="urlInput">Article URL</label>
-                        <input id="urlInput" type="url" placeholder="https://example.com/article" />
-                        <div class="field__hint">CORS can block fetch. When it does, paste text instead.</div>
-                      </div>
-
-                      <div class="add-options">
-                        <div class="field">
-                          <label class="field__label" for="languageHintUrl">Language hint</label>
-                          <input id="languageHintUrl" type="text" placeholder="e.g. en-US" />
-                        </div>
-
-                        <div class="field">
-                          <label class="field__label" for="headingModeUrl">Headings</label>
-                          <select id="headingModeUrl" aria-label="Heading mode for URL">
-                            <option value="cue">Heading cue</option>
-                            <option value="pause">Heading pause</option>
-                            <option value="off">Heading off</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div class="add-actions">
-                        <button class="button button--primary" id="addUrl" type="button">
-                          <span class="button__label">Fetch &amp; add</span>
-                          <span class="button__spinner hidden" id="urlSpinner" aria-hidden="true"></span>
-                        </button>
-                      </div>
-
-                      <p class="hint">If extraction fails, the app keeps working. Add by paste.</p>
-                    </div>
-                  </div>
-                </section>
+            <div class="form3">
+              <div class="field">
+                <label class="lbl" for="voiceSearch">Voice</label>
+                <input id="voiceSearch" class="in" type="text" autocomplete="off" placeholder="Search voices" />
+                <select id="voiceSelect" class="in" aria-label="Voice selection"></select>
+                <div class="meta" id="voiceMeta">Loading voices…</div>
               </div>
 
-              <section class="panel panel--glow now-playing" aria-live="polite" aria-label="Now Playing">
-                <div class="now-playing__head">
-                  <div class="now-playing__title">
-                    <h2>Now Playing</h2>
-                    <p id="nowTitle" class="now-title">Nothing queued</p>
-                    <p id="nowStatus" class="now-status">Add text or a URL to begin.</p>
-                  </div>
-
-                  <div class="now-actions">
-                    <button class="button button--ghost" id="focusMode" type="button">Focus mode</button>
-                    <button class="button button--ghost" id="exportQueue" type="button">Export JSON</button>
-                    <label class="button button--ghost" for="importQueue">Import JSON</label>
-                    <input id="importQueue" type="file" accept="application/json" hidden />
-                  </div>
+              <div class="field">
+                <label class="lbl" for="rate">Rate</label>
+                <div class="row rowTight">
+                  <input id="rate" class="range" type="range" min="0.75" max="2" step="0.05" />
+                  <div class="pillVal" id="rateVal" aria-label="Rate value">1.00×</div>
                 </div>
-
-                <div class="now-grid">
-                  <div class="now-progress">
-                    <div class="progress-bar" id="progressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Playback progress">
-                      <div class="progress-bar__fill" id="progressFill"></div>
-                      <div class="progress-bar__sheen" aria-hidden="true"></div>
-                    </div>
-
-                    <div class="progress-meta" aria-label="Time">
-                      <span id="elapsed">0:00</span>
-                      <span id="remaining">-0:00</span>
-                    </div>
-
-                    <div class="now-speaking" id="nowSpeaking">Ready.</div>
-                    <div class="sleep-timer" id="sleepTimer">Sleep timer: off</div>
-
-                    <div class="up-next-inline" aria-label="Up next preview">
-                      <div class="up-next-inline__label">Up next</div>
-                      <ol id="upNext"></ol>
-                    </div>
-                  </div>
-
-                  <aside class="now-side" aria-label="Queue insight">
-                    <div class="stat-card">
-                      <div class="stat-card__row">
-                        <div class="stat">
-                          <div class="stat__label">Queue</div>
-                          <div class="stat__value" id="queueCount">0</div>
-                        </div>
-                        <div class="stat">
-                          <div class="stat__label">Remaining</div>
-                          <div class="stat__value" id="queueTime">0:00</div>
-                        </div>
-                      </div>
-
-                      <div class="chart-wrap" aria-label="Queue duration chart">
-                        <canvas id="queueChart" width="560" height="120" role="img" aria-label="Estimated duration per queue item"></canvas>
-                        <div class="chart-tooltip hidden" id="chartTip" role="tooltip"></div>
-                      </div>
-
-                      <div class="stat-card__foot">
-                        <div class="micro">
-                          <span class="micro__label">Today listened</span>
-                          <span class="micro__value" id="todayListened">0:00</span>
-                        </div>
-                        <div class="micro">
-                          <span class="micro__label">Session</span>
-                          <span class="micro__value" id="sessionListened">0:00</span>
-                        </div>
-                      </div>
-                    </div>
-                  </aside>
-                </div>
-              </section>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel queue" aria-label="Queue">
-          <div class="queue__header">
-            <div class="queue__title">
-              <h2>Queue</h2>
-              <p class="queue__subtitle" id="queueSubtitle">Reorder with <span class="kbd">Alt</span> + <span class="kbd">↑</span>/<span class="kbd">↓</span>. Open commands with <span class="kbd">Ctrl</span> + <span class="kbd">K</span>.</p>
-            </div>
-            <div class="queue__actions">
-              <input id="queueSearch" class="queue__search" type="search" placeholder="Search queue…" aria-label="Search queue" />
-              <button class="button button--ghost" id="clearQueue" type="button">Clear</button>
-            </div>
-          </div>
-
-          <div id="queueEmpty" class="empty hidden" role="status" aria-live="polite">
-            <div class="empty__title">Queue is empty</div>
-            <div class="empty__text">Add text or try a URL fetch. Nothing leaves the device.</div>
-          </div>
-
-          <div id="queueList" class="queue__list" role="list" aria-label="Queue items"></div>
-
-          <div class="queue__footer hidden" id="queueFooter">
-            <button class="button button--ghost" id="toggleCompact" type="button">Toggle compact mode</button>
-          </div>
-        </section>
-
-        <section class="panel settings" aria-label="Settings">
-          <div class="settings__card">
-            <h2>Sleep timer</h2>
-            <div class="settings__row">
-              <select id="sleepSelect" aria-label="Sleep timer">
-                <option value="off">Off</option>
-                <option value="5">5 minutes</option>
-                <option value="10">10 minutes</option>
-                <option value="20">20 minutes</option>
-                <option value="30">30 minutes</option>
-                <option value="end">End of item</option>
-              </select>
-              <button class="button button--ghost" id="sleepStart" type="button">Set</button>
-              <button class="button button--ghost" id="sleepCancel" type="button">Cancel</button>
-            </div>
-          </div>
-
-          <div class="settings__card">
-            <h2>Pronunciation</h2>
-            <div class="field field--textarea">
-              <label class="field__label" for="dictInput">Dictionary</label>
-              <textarea id="dictInput" placeholder="custom term => replacement, one per line"></textarea>
-              <div class="field__hint">Applied locally. No network calls.</div>
-            </div>
-            <button class="button button--ghost" id="saveDict" type="button">Save dictionary</button>
-          </div>
-        </section>
-
-        <section class="panel help hidden" id="shortcuts" aria-label="Keyboard shortcuts">
-          <div class="panel__head">
-            <h2 class="panel__title">Shortcuts</h2>
-            <p class="panel__subtitle">Works without animation. Visible focus. No mouse required.</p>
-          </div>
-
-          <ul class="shortcut-list">
-            <li><strong>Space</strong> play/pause</li>
-            <li><strong>J/K</strong> previous/next sentence</li>
-            <li><strong>N/P</strong> next/previous item</li>
-            <li><strong>,/.</strong> seek by skip interval</li>
-            <li><strong>Alt+↑/↓</strong> reorder focused item</li>
-            <li><strong>F</strong> focus mode</li>
-            <li><strong>Ctrl+K</strong> command palette</li>
-            <li><strong>?</strong> toggle shortcuts</li>
-            <li><strong>Esc</strong> exit focus mode / close dialogs</li>
-          </ul>
-        </section>
-
-        <footer class="footer" role="contentinfo">
-          <div class="footer__left">QueueTTS</div>
-          <div class="footer__right">Local-first. Static. No tracking.</div>
-        </footer>
-
-        <div class="toast-stack" id="toastStack" role="region" aria-live="polite" aria-label="Notifications"></div>
-        <div class="sr-only" id="ariaLive" aria-live="polite"></div>
-
-        <dialog class="dialog" id="cmdkDialog" aria-label="Command palette">
-          <div class="dialog__frame">
-            <div class="cmdk">
-              <div class="cmdk__top">
-                <input id="cmdkInput" class="cmdk__input" type="text" autocomplete="off" placeholder="Type a command…" aria-label="Command search" />
-                <button class="button button--ghost cmdk__close" id="cmdkClose" type="button">Close</button>
-              </div>
-              <div class="cmdk__meta" id="cmdkMeta">Enter to run · ↑/↓ to navigate</div>
-              <div class="cmdk__list" id="cmdkList" role="listbox" aria-label="Commands"></div>
-            </div>
-          </div>
-        </dialog>
-
-        <dialog class="dialog" id="editDialog" aria-label="Edit queue item">
-          <div class="dialog__frame">
-            <form method="dialog" class="edit">
-              <div class="edit__head">
-                <div class="edit__title">Edit item</div>
-                <div class="edit__actions">
-                  <button class="button button--ghost" id="editCancel" value="cancel" type="submit">Cancel</button>
-                  <button class="button button--primary" id="editSave" value="save" type="submit">Save</button>
+                <div class="row rowTight" role="group" aria-label="Rate presets">
+                  <button class="pill" type="button" data-rate="0.75">0.75×</button>
+                  <button class="pill" type="button" data-rate="1">1×</button>
+                  <button class="pill" type="button" data-rate="1.25">1.25×</button>
+                  <button class="pill" type="button" data-rate="1.5">1.5×</button>
+                  <button class="pill" type="button" data-rate="2">2×</button>
                 </div>
               </div>
-              <div class="edit__body">
+
+              <div class="field">
+                <label class="lbl" for="skip">Skip interval</label>
+                <select id="skip" class="in" aria-label="Skip interval">
+                  <option value="10">10s</option>
+                  <option value="15">15s</option>
+                  <option value="30">30s</option>
+                </select>
+                <div class="meta">Used for “,” and “.” seek, and ± buttons.</div>
+              </div>
+            </div>
+
+            <div class="banner hidden" id="speechBanner" role="status" aria-live="polite"></div>
+          </section>
+
+          <section class="panel" aria-label="Add to queue">
+            <header class="panelHead">
+              <h2 class="h2">Add</h2>
+              <p class="sub">Paste instantly or fetch a URL. Extraction failures are expected and handled.</p>
+            </header>
+
+            <div class="tabs" role="tablist" aria-label="Add mode">
+              <button class="tab" type="button" id="tabPaste" role="tab" aria-selected="true" aria-controls="panePaste">Paste</button>
+              <button class="tab" type="button" id="tabUrl" role="tab" aria-selected="false" aria-controls="paneUrl">URL</button>
+            </div>
+
+            <div class="panes">
+              <div id="panePaste" class="pane" role="tabpanel" aria-labelledby="tabPaste">
                 <div class="field">
-                  <label class="field__label" for="editTitle">Title</label>
-                  <input id="editTitle" type="text" />
+                  <label class="lbl" for="paste">Text</label>
+                  <textarea id="paste" class="ta" placeholder="Paste article text here…"></textarea>
+                  <div class="row rowBetween">
+                    <div class="meta" id="pasteMeta">0 characters</div>
+                    <div class="meta" id="pasteEst">Estimated: 0:00</div>
+                  </div>
                 </div>
-                <div class="field field--textarea">
-                  <label class="field__label" for="editText">Text</label>
-                  <textarea id="editText"></textarea>
-                </div>
-              </div>
-            </form>
-          </div>
-        </dialog>
 
-        <dialog class="dialog" id="confirmDialog" aria-label="Confirm">
-          <div class="dialog__frame">
-            <form method="dialog" class="confirm">
-              <div class="confirm__title" id="confirmTitle">Confirm</div>
-              <div class="confirm__text" id="confirmText">Are you sure?</div>
-              <div class="confirm__actions">
-                <button class="button button--ghost" id="confirmCancel" value="cancel" type="submit">Cancel</button>
-                <button class="button button--primary" id="confirmOk" value="ok" type="submit">OK</button>
+                <div class="form2">
+                  <div class="field">
+                    <label class="lbl" for="langPaste">Language hint</label>
+                    <input id="langPaste" class="in" type="text" placeholder="e.g. en-US" />
+                  </div>
+                  <div class="field">
+                    <label class="lbl" for="headPaste">Headings</label>
+                    <select id="headPaste" class="in" aria-label="Heading mode">
+                      <option value="cue">Heading cue</option>
+                      <option value="pause">Heading pause</option>
+                      <option value="off">Heading off</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row rowBetween">
+                  <label class="toggle" for="cleanup">
+                    <input id="cleanup" type="checkbox" />
+                    <span>Quick cleanup</span>
+                  </label>
+                  <button class="btn btnPrimary" type="button" id="addPasteBtn">Add to queue</button>
+                </div>
               </div>
-            </form>
-          </div>
-        </dialog>
-      </main>
+
+              <div id="paneUrl" class="pane hidden" role="tabpanel" aria-labelledby="tabUrl">
+                <div class="field">
+                  <label class="lbl" for="url">Article URL</label>
+                  <input id="url" class="in" type="url" placeholder="https://example.com/article" />
+                  <div class="meta">If fetch fails (CORS), use Paste.</div>
+                </div>
+
+                <div class="form2">
+                  <div class="field">
+                    <label class="lbl" for="langUrl">Language hint</label>
+                    <input id="langUrl" class="in" type="text" placeholder="e.g. en-US" />
+                  </div>
+                  <div class="field">
+                    <label class="lbl" for="headUrl">Headings</label>
+                    <select id="headUrl" class="in" aria-label="Heading mode for URL">
+                      <option value="cue">Heading cue</option>
+                      <option value="pause">Heading pause</option>
+                      <option value="off">Heading off</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row rowBetween">
+                  <div class="meta" id="urlMeta">Ready.</div>
+                  <button class="btn btnPrimary" type="button" id="addUrlBtn">Fetch &amp; add</button>
+                </div>
+
+                <div class="callout hidden" id="urlError" role="status" aria-live="polite"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="col">
+          <section class="panel panelGlow" aria-label="Now playing" aria-live="polite">
+            <header class="panelHead row rowBetween">
+              <div>
+                <h2 class="h2">Now Playing</h2>
+                <div class="title" id="nowTitle">Nothing queued</div>
+                <div class="sub" id="nowStatus">Add text or a URL to begin.</div>
+              </div>
+
+              <div class="row">
+                <button class="btn btnGhost" type="button" id="focusBtn">Focus</button>
+                <button class="btn btnGhost" type="button" id="moreBtn" aria-haspopup="menu" aria-expanded="false">More</button>
+              </div>
+            </header>
+
+            <div class="progress" aria-label="Playback progress">
+              <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar">
+                <div class="barFill" id="barFill"></div>
+              </div>
+              <div class="row rowBetween mono">
+                <span id="elapsed">0:00</span>
+                <span id="remaining">-0:00</span>
+              </div>
+            </div>
+
+            <div class="speak">
+              <div class="row rowBetween">
+                <div class="chip chipLive" id="stateChip">Ready</div>
+                <div class="meta" id="sleepLabel">Sleep timer: off</div>
+              </div>
+              <div class="speakText" id="speakText">Add an item to start listening.</div>
+            </div>
+
+            <div class="split">
+              <div class="stack">
+                <div class="h3">Up next</div>
+                <ol class="next" id="upNext" aria-label="Up next"></ol>
+              </div>
+
+              <div class="stack">
+                <div class="h3">Session</div>
+                <div class="stats">
+                  <div class="stat">
+                    <div class="meta">Listening today</div>
+                    <div class="statVal" id="todayVal">0:00</div>
+                  </div>
+                  <div class="stat">
+                    <div class="meta">Items finished today</div>
+                    <div class="statVal" id="doneVal">0</div>
+                  </div>
+                </div>
+                <div class="sparkWrap" aria-label="Listening activity">
+                  <svg class="spark" id="spark" viewBox="0 0 200 56" preserveAspectRatio="none" role="img" aria-label="Listening activity sparkline"></svg>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="Queue">
+            <header class="panelHead row rowBetween">
+              <h2 class="h2">Queue</h2>
+              <div class="row">
+                <input id="queueFilter" class="in inSmall" type="text" placeholder="Filter queue" aria-label="Filter queue" />
+                <button class="btn btnGhost" type="button" id="clearBtn">Clear</button>
+              </div>
+            </header>
+
+            <div class="list" id="queueList" role="list" aria-label="Queue items"></div>
+
+            <div class="empty hidden" id="queueEmpty" role="status" aria-live="polite">
+              <div class="emptyTitle">Queue is empty</div>
+              <div class="meta">Paste text or fetch a URL, then press Space to start.</div>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="Settings">
+            <header class="panelHead">
+              <h2 class="h2">Settings</h2>
+              <p class="sub">Stored locally on this device.</p>
+            </header>
+
+            <div class="form2">
+              <div class="field">
+                <label class="lbl" for="sleep">Sleep timer</label>
+                <div class="row">
+                  <select id="sleep" class="in" aria-label="Sleep timer">
+                    <option value="off">Off</option>
+                    <option value="5">5 minutes</option>
+                    <option value="10">10 minutes</option>
+                    <option value="20">20 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="end">End of item</option>
+                  </select>
+                  <button class="btn btnGhost" type="button" id="sleepSet">Set</button>
+                  <button class="btn btnGhost" type="button" id="sleepCancel">Cancel</button>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="lbl" for="dict">Pronunciation dictionary</label>
+                <textarea id="dict" class="ta taSmall" placeholder="term => replacement, one per line"></textarea>
+                <div class="row rowBetween">
+                  <div class="meta">Applied locally during playback.</div>
+                  <button class="btn btnGhost" type="button" id="dictSave">Save</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <footer class="foot" role="contentinfo">
+        <div>QueueTTS</div>
+        <div>Local-first. Static. No tracking.</div>
+      </footer>
+
+      <div id="toast" class="toasts" role="region" aria-live="polite" aria-label="Notifications"></div>
+      <div id="live" class="sr" aria-live="polite"></div>
+
+      <input id="importFile" type="file" accept="application/json" hidden />
+    </main>
+
+    <div class="overlay hidden" id="overlay" aria-hidden="true"></div>
+
+    <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modalCard" role="document" aria-label="Dialog">
+        <header class="modalHead">
+          <div class="modalTitle" id="modalTitle"></div>
+          <button class="btn btnGhost btnIcon" type="button" id="modalClose" aria-label="Close">×</button>
+        </header>
+        <div class="modalBody" id="modalBody"></div>
+        <footer class="modalFoot" id="modalFoot"></footer>
+      </div>
     </div>
+
+    <div class="menu hidden" id="menu" role="menu" aria-hidden="true"></div>
 
     <script type="module" src="assets/js/main.js"></script>
   </body>
