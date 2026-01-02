@@ -3,191 +3,323 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
     <title>QueueTTS · Local-first text-to-speech queue</title>
     <link rel="stylesheet" href="assets/css/app.css" />
   </head>
+
   <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
     <div id="app" class="app">
-      <header class="app__header">
-        <div>
-          <h1>QueueTTS</h1>
-          <p class="subtitle">Local-first TTS queue for articles and pasted text.</p>
+      <!-- Ambient background layer (CSS-driven) -->
+      <div class="app__bg" aria-hidden="true"></div>
+
+      <header class="topbar" role="banner">
+        <div class="topbar__left">
+          <div class="brand">
+            <div class="brand__mark" aria-hidden="true">
+              <svg class="logo" viewBox="0 0 64 64" role="img" aria-label="QueueTTS">
+                <defs>
+                  <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="currentColor" stop-opacity="0.9"></stop>
+                    <stop offset="1" stop-color="currentColor" stop-opacity="0.5"></stop>
+                  </linearGradient>
+                </defs>
+                <path
+                  class="logo__path"
+                  d="M16 40c4.5 6.5 11 10 20 10 10.5 0 18-5.5 18-15 0-8-5-12.5-14-14l-6-1c-5.5-.9-8-3-8-6.5C26 9 30 6 35.5 6 42 6 47 9 50 14"
+                  fill="none"
+                  stroke="url(#logoGrad)"
+                  stroke-width="3.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  class="logo__path logo__path--2"
+                  d="M14 50h18c8.5 0 14-4.5 14-12 0-7-4.2-10-11.5-11.3l-4.5-.8"
+                  fill="none"
+                  stroke="url(#logoGrad)"
+                  stroke-width="3.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+
+            <div class="brand__text">
+              <h1 class="brand__name">QueueTTS</h1>
+              <p class="brand__tagline">Local-first text-to-speech queue for articles and pasted text.</p>
+            </div>
+          </div>
+
+          <div class="chips" aria-label="Product constraints">
+            <span class="chip" role="note">Static site</span>
+            <span class="chip" role="note">Local-first</span>
+            <span class="chip" role="note">No tracking</span>
+          </div>
         </div>
-        <div class="header__actions">
-          <button class="button button--ghost" id="themeToggle">Theme</button>
-          <button class="button button--ghost" id="contrastToggle">High contrast</button>
-          <button class="button button--ghost" id="motionToggle">Reduce motion</button>
+
+        <div class="topbar__right header__actions">
+          <button class="button button--ghost" id="themeToggle" type="button">Theme</button>
+          <button class="button button--ghost" id="contrastToggle" type="button">High contrast</button>
+          <button class="button button--ghost" id="motionToggle" type="button">Reduce motion</button>
         </div>
       </header>
 
-      <section class="controls">
-        <div class="controls__left">
-          <div class="controls__row">
-            <button class="button" id="playPause">Play</button>
-            <button class="button button--ghost" id="prevItem">Prev item</button>
-            <button class="button button--ghost" id="nextItem">Next item</button>
-          </div>
-          <div class="controls__row">
-            <button class="button button--ghost" id="prevSentence">⟵ Sentence</button>
-            <button class="button button--ghost" id="nextSentence">Sentence ⟶</button>
-            <div class="seekers">
-              <button class="button button--ghost" data-seek="-10">-10s</button>
-              <button class="button button--ghost" data-seek="-15">-15s</button>
-              <button class="button button--ghost" data-seek="-30">-30s</button>
-              <button class="button button--ghost" data-seek="10">+10s</button>
-              <button class="button button--ghost" data-seek="15">+15s</button>
-              <button class="button button--ghost" data-seek="30">+30s</button>
+      <main id="main" class="main" role="main">
+        <section class="hero" aria-label="QueueTTS player">
+          <div class="hero__frame">
+            <div class="hero__mesh" aria-hidden="true"></div>
+            <div class="hero__noise" aria-hidden="true"></div>
+
+            <div class="hero__content">
+              <div class="hero__left">
+                <div class="panel panel--glass controls" aria-label="Playback controls">
+                  <div class="panel__head">
+                    <h2 class="panel__title">Playback</h2>
+                    <p class="panel__subtitle">Keyboard-first. Touch-friendly. Quietly powerful.</p>
+                  </div>
+
+                  <div class="controls__left">
+                    <div class="controls__row">
+                      <button class="button button--primary" id="playPause" type="button">Play</button>
+                      <button class="button button--ghost" id="prevItem" type="button">Prev item</button>
+                      <button class="button button--ghost" id="nextItem" type="button">Next item</button>
+                    </div>
+
+                    <div class="controls__row">
+                      <button class="button button--ghost" id="prevSentence" type="button" aria-label="Previous sentence">⟵ Sentence</button>
+                      <button class="button button--ghost" id="nextSentence" type="button" aria-label="Next sentence">Sentence ⟶</button>
+
+                      <div class="seekers" role="group" aria-label="Seek controls">
+                        <button class="button button--ghost" type="button" data-seek="-10">-10s</button>
+                        <button class="button button--ghost" type="button" data-seek="-15">-15s</button>
+                        <button class="button button--ghost" type="button" data-seek="-30">-30s</button>
+                        <span class="seekers__sep" aria-hidden="true"></span>
+                        <button class="button button--ghost" type="button" data-seek="10">+10s</button>
+                        <button class="button button--ghost" type="button" data-seek="15">+15s</button>
+                        <button class="button button--ghost" type="button" data-seek="30">+30s</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="controls__right">
+                    <div class="control">
+                      <label for="voiceSearch">Voice</label>
+                      <div class="control__stack">
+                        <input id="voiceSearch" type="text" autocomplete="off" placeholder="Search voices" />
+                        <select id="voiceSelect" aria-label="Voice selection"></select>
+                      </div>
+                    </div>
+
+                    <div class="control">
+                      <label for="rateRange">Rate</label>
+                      <div class="control__stack">
+                        <input id="rateRange" type="range" min="0.75" max="2" step="0.05" />
+                        <div class="rate__ticks" role="group" aria-label="Rate presets">
+                          <button class="pill" type="button" data-rate="0.75">0.75×</button>
+                          <button class="pill" type="button" data-rate="1">1×</button>
+                          <button class="pill" type="button" data-rate="1.25">1.25×</button>
+                          <button class="pill" type="button" data-rate="1.5">1.5×</button>
+                          <button class="pill" type="button" data-rate="2">2×</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="control">
+                      <label for="skipSelect">Skip interval</label>
+                      <select id="skipSelect" aria-label="Skip interval">
+                        <option value="10">10s</option>
+                        <option value="15">15s</option>
+                        <option value="30">30s</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <section class="panel add-panel" aria-label="Add to queue">
+                  <div class="panel__head">
+                    <h2 class="panel__title">Add</h2>
+                    <p class="panel__subtitle">Paste instantly or fetch a URL. Local-first, no drama.</p>
+                  </div>
+
+                  <div class="add-tabs" role="tablist" aria-label="Add mode">
+                    <button class="tab tab--active" type="button" data-mode="paste" role="tab" aria-selected="true">Paste text</button>
+                    <button class="tab" type="button" data-mode="url" role="tab" aria-selected="false">Add URL</button>
+                  </div>
+
+                  <div class="add-body">
+                    <div class="add-pane" data-pane="paste" role="tabpanel">
+                      <div class="field field--textarea">
+                        <label class="field__label" for="pasteInput">Live demo</label>
+                        <textarea id="pasteInput" placeholder="Paste article text here…"></textarea>
+                        <div class="field__hint">Tip: use Space to play/pause, J/K for sentences.</div>
+                      </div>
+
+                      <div class="add-options">
+                        <div class="field">
+                          <label class="field__label" for="languageHint">Language hint</label>
+                          <input id="languageHint" type="text" placeholder="e.g. en-US" />
+                        </div>
+
+                        <div class="field">
+                          <label class="field__label" for="headingMode">Headings</label>
+                          <select id="headingMode" aria-label="Heading mode">
+                            <option value="cue">Heading cue</option>
+                            <option value="pause">Heading pause</option>
+                            <option value="off">Heading off</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="add-actions">
+                        <label class="toggle" for="cleanupToggle">
+                          <input id="cleanupToggle" type="checkbox" checked />
+                          <span>Quick cleanup</span>
+                        </label>
+                        <button class="button button--primary" id="addPaste" type="button">Add to queue</button>
+                      </div>
+                    </div>
+
+                    <div class="add-pane hidden" data-pane="url" role="tabpanel">
+                      <div class="field">
+                        <label class="field__label" for="urlInput">Article URL</label>
+                        <input id="urlInput" type="url" placeholder="https://example.com/article" />
+                        <div class="field__hint">If extraction fails or CORS blocks the request, paste text per item.</div>
+                      </div>
+
+                      <div class="add-options">
+                        <div class="field">
+                          <label class="field__label" for="languageHintUrl">Language hint</label>
+                          <input id="languageHintUrl" type="text" placeholder="e.g. en-US" />
+                        </div>
+
+                        <div class="field">
+                          <label class="field__label" for="headingModeUrl">Headings</label>
+                          <select id="headingModeUrl" aria-label="Heading mode for URL">
+                            <option value="cue">Heading cue</option>
+                            <option value="pause">Heading pause</option>
+                            <option value="off">Heading off</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="add-actions">
+                        <button class="button button--primary" id="addUrl" type="button">Fetch &amp; add</button>
+                      </div>
+
+                      <p class="hint">CORS is common. It’s expected. Use paste-per-item when needed.</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <section class="panel panel--glow now-playing" aria-live="polite" aria-label="Now Playing">
+                <div class="now-playing__head">
+                  <div class="now-playing__title">
+                    <h2>Now Playing</h2>
+                    <p id="nowTitle" class="now-title">Nothing queued</p>
+                    <p id="nowStatus" class="now-status">Add text or a URL to begin.</p>
+                  </div>
+
+                  <div class="now-actions">
+                    <button class="button button--ghost" id="focusMode" type="button">Focus mode</button>
+                    <button class="button button--ghost" id="exportQueue" type="button">Export JSON</button>
+                    <label class="button button--ghost" for="importQueue">Import JSON</label>
+                    <input id="importQueue" type="file" accept="application/json" hidden />
+                  </div>
+                </div>
+
+                <div class="now-progress">
+                  <div class="progress-bar" id="progressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Playback progress">
+                    <div class="progress-bar__fill" id="progressFill"></div>
+                    <div class="progress-bar__sheen" aria-hidden="true"></div>
+                  </div>
+
+                  <div class="progress-meta" aria-label="Time">
+                    <span id="elapsed">0:00</span>
+                    <span id="remaining">-0:00</span>
+                  </div>
+
+                  <div class="now-speaking" id="nowSpeaking">Ready.</div>
+                  <div class="sleep-timer" id="sleepTimer">Sleep timer: off</div>
+
+                  <div class="up-next-inline" aria-label="Up next preview">
+                    <div class="up-next-inline__label">Up next</div>
+                    <ol id="upNext"></ol>
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
-        </div>
-        <div class="controls__right">
-          <div class="control">
-            <label for="voiceSearch">Voice</label>
-            <input id="voiceSearch" type="text" placeholder="Search voices" />
-            <select id="voiceSelect"></select>
-          </div>
-          <div class="control">
-            <label for="rateRange">Rate</label>
-            <input id="rateRange" type="range" min="0.75" max="2" step="0.05" />
-            <div class="rate__ticks">
-              <button class="pill" data-rate="0.75">0.75×</button>
-              <button class="pill" data-rate="1">1×</button>
-              <button class="pill" data-rate="1.25">1.25×</button>
-              <button class="pill" data-rate="1.5">1.5×</button>
-              <button class="pill" data-rate="2">2×</button>
+        </section>
+
+        <section class="panel queue" aria-label="Queue">
+          <div class="queue__header">
+            <h2>Queue</h2>
+            <div class="queue__actions">
+              <button class="button button--ghost" id="clearQueue" type="button">Clear</button>
             </div>
           </div>
-          <div class="control">
-            <label for="skipSelect">Skip interval</label>
-            <select id="skipSelect">
-              <option value="10">10s</option>
-              <option value="15">15s</option>
-              <option value="30">30s</option>
-            </select>
-          </div>
-        </div>
-      </section>
 
-      <section class="now-playing" aria-live="polite">
-        <div>
-          <h2>Now Playing</h2>
-          <p id="nowTitle" class="now-title">Nothing queued</p>
-          <p id="nowStatus" class="now-status">Add text or a URL to begin.</p>
-        </div>
-        <div class="now-progress">
-          <div class="progress-bar" id="progressBar">
-            <div class="progress-bar__fill" id="progressFill"></div>
-          </div>
-          <div class="progress-meta">
-            <span id="elapsed">0:00</span>
-            <span id="remaining">-0:00</span>
-          </div>
-          <div class="now-speaking" id="nowSpeaking">Ready.</div>
-          <div class="sleep-timer" id="sleepTimer">Sleep timer: off</div>
-        </div>
-        <div class="now-actions">
-          <button class="button button--ghost" id="focusMode">Focus mode</button>
-          <button class="button button--ghost" id="exportQueue">Export JSON</button>
-          <label class="button button--ghost" for="importQueue">Import JSON</label>
-          <input id="importQueue" type="file" accept="application/json" hidden />
-        </div>
-      </section>
+          <div id="queueList" class="queue__list" role="list" aria-label="Queue items"></div>
+        </section>
 
-      <section class="add-panel">
-        <div class="add-tabs">
-          <button class="tab tab--active" data-mode="paste">Paste text</button>
-          <button class="tab" data-mode="url">Add URL</button>
-        </div>
-        <div class="add-body">
-          <div class="add-pane" data-pane="paste">
-            <textarea id="pasteInput" placeholder="Paste article text here..."></textarea>
-            <div class="add-options">
-              <input id="languageHint" type="text" placeholder="Language hint (e.g. en-US)" />
-              <select id="headingMode">
-                <option value="cue">Heading cue</option>
-                <option value="pause">Heading pause</option>
-                <option value="off">Heading off</option>
+        <section class="panel settings" aria-label="Settings">
+          <div class="settings__card">
+            <h2>Sleep timer</h2>
+            <div class="settings__row">
+              <select id="sleepSelect" aria-label="Sleep timer">
+                <option value="off">Off</option>
+                <option value="5">5 minutes</option>
+                <option value="10">10 minutes</option>
+                <option value="20">20 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="end">End of item</option>
               </select>
-            </div>
-            <div class="add-actions">
-              <label class="toggle">
-                <input id="cleanupToggle" type="checkbox" checked />
-                <span>Quick cleanup</span>
-              </label>
-              <button class="button" id="addPaste">Add to queue</button>
+              <button class="button button--ghost" id="sleepStart" type="button">Set</button>
+              <button class="button button--ghost" id="sleepCancel" type="button">Cancel</button>
             </div>
           </div>
-          <div class="add-pane hidden" data-pane="url">
-            <input id="urlInput" type="url" placeholder="https://example.com/article" />
-            <div class="add-options">
-              <input id="languageHintUrl" type="text" placeholder="Language hint (e.g. en-US)" />
-              <select id="headingModeUrl">
-                <option value="cue">Heading cue</option>
-                <option value="pause">Heading pause</option>
-                <option value="off">Heading off</option>
-              </select>
+
+          <div class="settings__card">
+            <h2>Pronunciation</h2>
+            <div class="field field--textarea">
+              <label class="field__label" for="dictInput">Dictionary</label>
+              <textarea id="dictInput" placeholder="custom term => replacement, one per line"></textarea>
+              <div class="field__hint">Applied locally, on-device. No network calls.</div>
             </div>
-            <div class="add-actions">
-              <button class="button" id="addUrl">Fetch &amp; add</button>
-            </div>
-            <p class="hint">If extraction fails or CORS blocks the request, you can paste the text per item.</p>
+            <button class="button button--ghost" id="saveDict" type="button">Save dictionary</button>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="queue">
-        <div class="queue__header">
-          <h2>Queue</h2>
-          <div class="queue__actions">
-            <button class="button button--ghost" id="clearQueue">Clear</button>
+        <section class="panel help" id="shortcuts" aria-label="Keyboard shortcuts">
+          <div class="panel__head">
+            <h2 class="panel__title">Shortcuts</h2>
+            <p class="panel__subtitle">Designed for flow. Visible focus. No reliance on animation.</p>
           </div>
-        </div>
-        <div id="queueList" class="queue__list" role="list"></div>
-        <div class="up-next">
-          <h3>Up next</h3>
-          <ol id="upNext"></ol>
-        </div>
-      </section>
 
-      <section class="settings">
-        <div>
-          <h2>Sleep timer</h2>
-          <div class="settings__row">
-            <select id="sleepSelect">
-              <option value="off">Off</option>
-              <option value="5">5 minutes</option>
-              <option value="10">10 minutes</option>
-              <option value="20">20 minutes</option>
-              <option value="30">30 minutes</option>
-              <option value="end">End of item</option>
-            </select>
-            <button class="button button--ghost" id="sleepStart">Set</button>
-            <button class="button button--ghost" id="sleepCancel">Cancel</button>
-          </div>
-        </div>
-        <div>
-          <h2>Pronunciation</h2>
-          <textarea id="dictInput" placeholder="custom term => replacement, one per line"></textarea>
-          <button class="button button--ghost" id="saveDict">Save dictionary</button>
-        </div>
-      </section>
+          <ul class="shortcut-list">
+            <li><strong>Space</strong> play/pause</li>
+            <li><strong>J/K</strong> previous/next sentence</li>
+            <li><strong>N/P</strong> next/previous item</li>
+            <li><strong>,/.</strong> seek by skip interval</li>
+            <li><strong>Alt+↑/↓</strong> reorder queue</li>
+            <li><strong>F</strong> focus mode</li>
+            <li><strong>?</strong> toggle shortcuts</li>
+            <li><strong>Esc</strong> exit focus mode</li>
+          </ul>
+        </section>
 
-      <section class="help" id="shortcuts">
-        <h2>Shortcuts</h2>
-        <ul>
-          <li><strong>Space</strong> play/pause</li>
-          <li><strong>J/K</strong> previous/next sentence</li>
-          <li><strong>N/P</strong> next/previous item</li>
-          <li><strong>,/.</strong> seek by skip interval</li>
-          <li><strong>Alt+↑/↓</strong> reorder queue</li>
-          <li><strong>F</strong> focus mode</li>
-          <li><strong>?</strong> toggle shortcuts</li>
-          <li><strong>Esc</strong> exit focus mode</li>
-        </ul>
-      </section>
+        <footer class="footer" role="contentinfo">
+          <div class="footer__left">QueueTTS</div>
+          <div class="footer__right">Local-first. Static. No tracking.</div>
+        </footer>
 
-      <div class="toast-stack" id="toastStack" role="region" aria-live="polite"></div>
-      <div class="sr-only" id="ariaLive" aria-live="polite"></div>
+        <div class="toast-stack" id="toastStack" role="region" aria-live="polite" aria-label="Notifications"></div>
+        <div class="sr-only" id="ariaLive" aria-live="polite"></div>
+      </main>
     </div>
 
     <script type="module" src="assets/js/main.js"></script>
