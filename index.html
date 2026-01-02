@@ -12,7 +12,6 @@
     <a class="skip-link" href="#main">Skip to content</a>
 
     <div id="app" class="app">
-      <!-- Ambient background layer (CSS-driven) -->
       <div class="app__bg" aria-hidden="true"></div>
 
       <header class="topbar" role="banner">
@@ -48,7 +47,13 @@
             </div>
 
             <div class="brand__text">
-              <h1 class="brand__name">QueueTTS</h1>
+              <div class="brand__row">
+                <h1 class="brand__name">QueueTTS</h1>
+                <span class="status-chip" id="statusChip" aria-live="polite">
+                  <span class="status-chip__dot" aria-hidden="true"></span>
+                  <span class="status-chip__text" id="statusChipText">Idle</span>
+                </span>
+              </div>
               <p class="brand__tagline">Local-first text-to-speech queue for articles and pasted text.</p>
             </div>
           </div>
@@ -57,10 +62,12 @@
             <span class="chip" role="note">Static site</span>
             <span class="chip" role="note">Local-first</span>
             <span class="chip" role="note">No tracking</span>
+            <span class="chip chip--kbd" role="note"><span class="kbd">Ctrl</span><span class="kbd">K</span> palette</span>
           </div>
         </div>
 
         <div class="topbar__right header__actions">
+          <button class="button button--ghost" id="cmdkOpen" type="button" aria-haspopup="dialog">Commands</button>
           <button class="button button--ghost" id="themeToggle" type="button">Theme</button>
           <button class="button button--ghost" id="contrastToggle" type="button">High contrast</button>
           <button class="button button--ghost" id="motionToggle" type="button">Reduce motion</button>
@@ -78,7 +85,7 @@
                 <div class="panel panel--glass controls" aria-label="Playback controls">
                   <div class="panel__head">
                     <h2 class="panel__title">Playback</h2>
-                    <p class="panel__subtitle">Keyboard-first. Touch-friendly. Quietly powerful.</p>
+                    <p class="panel__subtitle">Sentence-accurate navigation with approximate time seeking.</p>
                   </div>
 
                   <div class="controls__left">
@@ -109,7 +116,13 @@
                       <label for="voiceSearch">Voice</label>
                       <div class="control__stack">
                         <input id="voiceSearch" type="text" autocomplete="off" placeholder="Search voices" />
-                        <select id="voiceSelect" aria-label="Voice selection"></select>
+                        <div class="select-wrap">
+                          <select id="voiceSelect" aria-label="Voice selection"></select>
+                          <div class="select-skeleton hidden" id="voiceSkeleton" aria-hidden="true">
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line"></div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -141,20 +154,20 @@
                 <section class="panel add-panel" aria-label="Add to queue">
                   <div class="panel__head">
                     <h2 class="panel__title">Add</h2>
-                    <p class="panel__subtitle">Paste instantly or fetch a URL. Local-first, no drama.</p>
+                    <p class="panel__subtitle">Paste instantly or attempt a URL fetch. No backend.</p>
                   </div>
 
                   <div class="add-tabs" role="tablist" aria-label="Add mode">
-                    <button class="tab tab--active" type="button" data-mode="paste" role="tab" aria-selected="true">Paste text</button>
-                    <button class="tab" type="button" data-mode="url" role="tab" aria-selected="false">Add URL</button>
+                    <button class="tab tab--active" id="tabPaste" type="button" data-mode="paste" role="tab" aria-selected="true" aria-controls="panePaste">Paste text</button>
+                    <button class="tab" id="tabUrl" type="button" data-mode="url" role="tab" aria-selected="false" aria-controls="paneUrl">Add URL</button>
                   </div>
 
                   <div class="add-body">
-                    <div class="add-pane" data-pane="paste" role="tabpanel">
+                    <div class="add-pane" id="panePaste" data-pane="paste" role="tabpanel" aria-labelledby="tabPaste">
                       <div class="field field--textarea">
-                        <label class="field__label" for="pasteInput">Live demo</label>
+                        <label class="field__label" for="pasteInput">Text</label>
                         <textarea id="pasteInput" placeholder="Paste article text here…"></textarea>
-                        <div class="field__hint">Tip: use Space to play/pause, J/K for sentences.</div>
+                        <div class="field__hint"><span class="kbd">Space</span> play/pause · <span class="kbd">J</span>/<span class="kbd">K</span> sentence · <span class="kbd">,</span>/<span class="kbd">.</span> skip</div>
                       </div>
 
                       <div class="add-options">
@@ -182,11 +195,11 @@
                       </div>
                     </div>
 
-                    <div class="add-pane hidden" data-pane="url" role="tabpanel">
+                    <div class="add-pane hidden" id="paneUrl" data-pane="url" role="tabpanel" aria-labelledby="tabUrl">
                       <div class="field">
                         <label class="field__label" for="urlInput">Article URL</label>
                         <input id="urlInput" type="url" placeholder="https://example.com/article" />
-                        <div class="field__hint">If extraction fails or CORS blocks the request, paste text per item.</div>
+                        <div class="field__hint">CORS can block fetch. When it does, paste text instead.</div>
                       </div>
 
                       <div class="add-options">
@@ -206,10 +219,13 @@
                       </div>
 
                       <div class="add-actions">
-                        <button class="button button--primary" id="addUrl" type="button">Fetch &amp; add</button>
+                        <button class="button button--primary" id="addUrl" type="button">
+                          <span class="button__label">Fetch &amp; add</span>
+                          <span class="button__spinner hidden" id="urlSpinner" aria-hidden="true"></span>
+                        </button>
                       </div>
 
-                      <p class="hint">CORS is common. It’s expected. Use paste-per-item when needed.</p>
+                      <p class="hint">If extraction fails, the app keeps working. Add by paste.</p>
                     </div>
                   </div>
                 </section>
@@ -231,24 +247,57 @@
                   </div>
                 </div>
 
-                <div class="now-progress">
-                  <div class="progress-bar" id="progressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Playback progress">
-                    <div class="progress-bar__fill" id="progressFill"></div>
-                    <div class="progress-bar__sheen" aria-hidden="true"></div>
+                <div class="now-grid">
+                  <div class="now-progress">
+                    <div class="progress-bar" id="progressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Playback progress">
+                      <div class="progress-bar__fill" id="progressFill"></div>
+                      <div class="progress-bar__sheen" aria-hidden="true"></div>
+                    </div>
+
+                    <div class="progress-meta" aria-label="Time">
+                      <span id="elapsed">0:00</span>
+                      <span id="remaining">-0:00</span>
+                    </div>
+
+                    <div class="now-speaking" id="nowSpeaking">Ready.</div>
+                    <div class="sleep-timer" id="sleepTimer">Sleep timer: off</div>
+
+                    <div class="up-next-inline" aria-label="Up next preview">
+                      <div class="up-next-inline__label">Up next</div>
+                      <ol id="upNext"></ol>
+                    </div>
                   </div>
 
-                  <div class="progress-meta" aria-label="Time">
-                    <span id="elapsed">0:00</span>
-                    <span id="remaining">-0:00</span>
-                  </div>
+                  <aside class="now-side" aria-label="Queue insight">
+                    <div class="stat-card">
+                      <div class="stat-card__row">
+                        <div class="stat">
+                          <div class="stat__label">Queue</div>
+                          <div class="stat__value" id="queueCount">0</div>
+                        </div>
+                        <div class="stat">
+                          <div class="stat__label">Remaining</div>
+                          <div class="stat__value" id="queueTime">0:00</div>
+                        </div>
+                      </div>
 
-                  <div class="now-speaking" id="nowSpeaking">Ready.</div>
-                  <div class="sleep-timer" id="sleepTimer">Sleep timer: off</div>
+                      <div class="chart-wrap" aria-label="Queue duration chart">
+                        <canvas id="queueChart" width="560" height="120" role="img" aria-label="Estimated duration per queue item"></canvas>
+                        <div class="chart-tooltip hidden" id="chartTip" role="tooltip"></div>
+                      </div>
 
-                  <div class="up-next-inline" aria-label="Up next preview">
-                    <div class="up-next-inline__label">Up next</div>
-                    <ol id="upNext"></ol>
-                  </div>
+                      <div class="stat-card__foot">
+                        <div class="micro">
+                          <span class="micro__label">Today listened</span>
+                          <span class="micro__value" id="todayListened">0:00</span>
+                        </div>
+                        <div class="micro">
+                          <span class="micro__label">Session</span>
+                          <span class="micro__value" id="sessionListened">0:00</span>
+                        </div>
+                      </div>
+                    </div>
+                  </aside>
                 </div>
               </section>
             </div>
@@ -257,13 +306,26 @@
 
         <section class="panel queue" aria-label="Queue">
           <div class="queue__header">
-            <h2>Queue</h2>
+            <div class="queue__title">
+              <h2>Queue</h2>
+              <p class="queue__subtitle" id="queueSubtitle">Reorder with <span class="kbd">Alt</span> + <span class="kbd">↑</span>/<span class="kbd">↓</span>. Open commands with <span class="kbd">Ctrl</span> + <span class="kbd">K</span>.</p>
+            </div>
             <div class="queue__actions">
+              <input id="queueSearch" class="queue__search" type="search" placeholder="Search queue…" aria-label="Search queue" />
               <button class="button button--ghost" id="clearQueue" type="button">Clear</button>
             </div>
           </div>
 
+          <div id="queueEmpty" class="empty hidden" role="status" aria-live="polite">
+            <div class="empty__title">Queue is empty</div>
+            <div class="empty__text">Add text or try a URL fetch. Nothing leaves the device.</div>
+          </div>
+
           <div id="queueList" class="queue__list" role="list" aria-label="Queue items"></div>
+
+          <div class="queue__footer hidden" id="queueFooter">
+            <button class="button button--ghost" id="toggleCompact" type="button">Toggle compact mode</button>
+          </div>
         </section>
 
         <section class="panel settings" aria-label="Settings">
@@ -288,16 +350,16 @@
             <div class="field field--textarea">
               <label class="field__label" for="dictInput">Dictionary</label>
               <textarea id="dictInput" placeholder="custom term => replacement, one per line"></textarea>
-              <div class="field__hint">Applied locally, on-device. No network calls.</div>
+              <div class="field__hint">Applied locally. No network calls.</div>
             </div>
             <button class="button button--ghost" id="saveDict" type="button">Save dictionary</button>
           </div>
         </section>
 
-        <section class="panel help" id="shortcuts" aria-label="Keyboard shortcuts">
+        <section class="panel help hidden" id="shortcuts" aria-label="Keyboard shortcuts">
           <div class="panel__head">
             <h2 class="panel__title">Shortcuts</h2>
-            <p class="panel__subtitle">Designed for flow. Visible focus. No reliance on animation.</p>
+            <p class="panel__subtitle">Works without animation. Visible focus. No mouse required.</p>
           </div>
 
           <ul class="shortcut-list">
@@ -305,10 +367,11 @@
             <li><strong>J/K</strong> previous/next sentence</li>
             <li><strong>N/P</strong> next/previous item</li>
             <li><strong>,/.</strong> seek by skip interval</li>
-            <li><strong>Alt+↑/↓</strong> reorder queue</li>
+            <li><strong>Alt+↑/↓</strong> reorder focused item</li>
             <li><strong>F</strong> focus mode</li>
+            <li><strong>Ctrl+K</strong> command palette</li>
             <li><strong>?</strong> toggle shortcuts</li>
-            <li><strong>Esc</strong> exit focus mode</li>
+            <li><strong>Esc</strong> exit focus mode / close dialogs</li>
           </ul>
         </section>
 
@@ -319,6 +382,56 @@
 
         <div class="toast-stack" id="toastStack" role="region" aria-live="polite" aria-label="Notifications"></div>
         <div class="sr-only" id="ariaLive" aria-live="polite"></div>
+
+        <dialog class="dialog" id="cmdkDialog" aria-label="Command palette">
+          <div class="dialog__frame">
+            <div class="cmdk">
+              <div class="cmdk__top">
+                <input id="cmdkInput" class="cmdk__input" type="text" autocomplete="off" placeholder="Type a command…" aria-label="Command search" />
+                <button class="button button--ghost cmdk__close" id="cmdkClose" type="button">Close</button>
+              </div>
+              <div class="cmdk__meta" id="cmdkMeta">Enter to run · ↑/↓ to navigate</div>
+              <div class="cmdk__list" id="cmdkList" role="listbox" aria-label="Commands"></div>
+            </div>
+          </div>
+        </dialog>
+
+        <dialog class="dialog" id="editDialog" aria-label="Edit queue item">
+          <div class="dialog__frame">
+            <form method="dialog" class="edit">
+              <div class="edit__head">
+                <div class="edit__title">Edit item</div>
+                <div class="edit__actions">
+                  <button class="button button--ghost" id="editCancel" value="cancel" type="submit">Cancel</button>
+                  <button class="button button--primary" id="editSave" value="save" type="submit">Save</button>
+                </div>
+              </div>
+              <div class="edit__body">
+                <div class="field">
+                  <label class="field__label" for="editTitle">Title</label>
+                  <input id="editTitle" type="text" />
+                </div>
+                <div class="field field--textarea">
+                  <label class="field__label" for="editText">Text</label>
+                  <textarea id="editText"></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+        </dialog>
+
+        <dialog class="dialog" id="confirmDialog" aria-label="Confirm">
+          <div class="dialog__frame">
+            <form method="dialog" class="confirm">
+              <div class="confirm__title" id="confirmTitle">Confirm</div>
+              <div class="confirm__text" id="confirmText">Are you sure?</div>
+              <div class="confirm__actions">
+                <button class="button button--ghost" id="confirmCancel" value="cancel" type="submit">Cancel</button>
+                <button class="button button--primary" id="confirmOk" value="ok" type="submit">OK</button>
+              </div>
+            </form>
+          </div>
+        </dialog>
       </main>
     </div>
 
