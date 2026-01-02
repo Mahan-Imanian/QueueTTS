@@ -29,8 +29,6 @@ const DEFAULT_PLAYBACK = {
   sleepTimer: null,
 };
 
-const PAGES_URL = 'https://mahan-imanian.github.io/QueueTTS/';
-
 const appState = {
   queue: [],
   prefs: { ...DEFAULT_PREFS },
@@ -236,7 +234,6 @@ const handlePasteForItem = (id, text) => {
     return;
   }
   item.text = text;
-  item.notice = '';
   item.state = 'queued';
   processItemText(item, { cleanup: true });
 };
@@ -244,7 +241,6 @@ const handlePasteForItem = (id, text) => {
 const processItemText = (item, { cleanup }) => {
   item.state = 'extracting';
   item.error = '';
-  item.notice = '';
   refreshUI();
 
   const cleaned = cleanText({ text: item.text, dictionary: appState.prefs.dictionary, cleanup });
@@ -277,24 +273,12 @@ const createItem = ({ text, url, sourceType, languageHint, headingMode }) => {
     headingMode: headingMode || appState.prefs.headingMode,
     state: 'queued',
     error: '',
-    notice: '',
     cleanedText: '',
     segments: [],
     durations: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
-};
-
-const addSampleItem = () => {
-  const text = `QueueTTS demo: This is a sample article to preview continuous playback.\n\nPaste or import more items to build a playlist. Each sentence becomes a safe speech segment, and the player will auto-advance through the queue.`;
-  const item = createItem({ text, sourceType: 'sample' });
-  item.title = 'Sample: QueueTTS demo';
-  appState.queue.push(item);
-  if (!appState.playback.currentId) {
-    appState.playback.currentId = item.id;
-  }
-  processItemText(item, { cleanup: true });
 };
 
 const addPasteItem = () => {
@@ -361,15 +345,19 @@ const addUrlItem = async () => {
     item.title = title;
     item.text = text;
     if (!text || text.trim().length < 40) {
+      item.state = 'error';
+      item.error = 'Extract failed';
+      addToast('Extract failed. Paste the text instead.', 'error');
       item.state = 'needs_paste';
-      item.notice = 'This site can’t be fetched from a static page. Use the bookmarklet or paste text below.';
       refreshUI();
       return;
     }
     processItemText(item, { cleanup: true });
   } catch (error) {
+    const message = error?.message?.includes('Failed to fetch') ? 'Fetch blocked (CORS)' : 'Fetch failed';
     item.state = 'needs_paste';
-    item.notice = 'This site can’t be fetched from a static page. Use the bookmarklet or paste text below.';
+    item.error = message;
+    addToast(message, 'error');
     refreshUI();
   } finally {
     dom.urlInput.value = '';
@@ -866,37 +854,6 @@ const setupImportExport = () => {
   });
 };
 
-const setupBookmarklets = () => {
-  const buildBookmarklet = () => {
-    const script = `(function(){try{var selection=window.getSelection&&window.getSelection().toString();var text='';if(selection&&selection.length>80){text=selection;}else{var article=document.querySelector('article');if(article&&article.innerText){text=article.innerText;}else{var parts=[];document.querySelectorAll('p').forEach(function(p){var t=p.innerText.trim();if(t.length>80){parts.push(t);}});text=parts.join('\\n\\n');}}if(!text||text.length<80){alert('QueueTTS: No readable text found. Try selecting the article text first.');return;}var max=200000;var truncated=false;if(text.length>max){text=text.slice(0,max);truncated=true;}var url='${PAGES_URL}#paste='+encodeURIComponent(text);window.open(url,'_blank','noopener');if(truncated){alert('QueueTTS: Long page truncated for safe import.');}}catch(e){alert('QueueTTS: Import failed.');}})();`;
-    return `javascript:${script}`;
-  };
-  const href = buildBookmarklet();
-  dom.bookmarkletHero.href = href;
-  dom.bookmarkletHeroLink.href = href;
-  dom.bookmarkletSettings.href = href;
-};
-
-const handleHashImport = () => {
-  if (!window.location.hash.startsWith('#paste=')) {
-    return;
-  }
-  const encoded = window.location.hash.slice(7);
-  const text = decodeURIComponent(encoded || '');
-  if (!text.trim()) {
-    return;
-  }
-  dom.pasteInput.value = text;
-  const item = createItem({ text, sourceType: 'paste' });
-  appState.queue.push(item);
-  if (!appState.playback.currentId) {
-    appState.playback.currentId = item.id;
-  }
-  processItemText(item, { cleanup: true });
-  addToast('Imported from page', 'success');
-  history.replaceState(null, document.title, window.location.pathname + window.location.search);
-};
-
 const initControls = () => {
   dom.playPause.addEventListener('click', togglePlayback);
   dom.nextItem.addEventListener('click', () => goToNextItem(true));
@@ -1002,10 +959,8 @@ const initControls = () => {
 
   dom.focusMode.addEventListener('click', toggleFocusMode);
   dom.queueList.addEventListener('keydown', handleKeyboardReorder);
-  dom.sampleChip.addEventListener('click', addSampleItem);
 
   setupImportExport();
-  setupBookmarklets();
 };
 
 const setupTabs = () => {
@@ -1091,10 +1046,6 @@ const initDom = () => {
   dom.upNext = qs('#upNext');
   dom.shortcuts = qs('#shortcuts');
   dom.ariaLive = qs('#ariaLive');
-  dom.sampleChip = qs('#sampleChip');
-  dom.bookmarkletHero = qs('#bookmarkletHero');
-  dom.bookmarkletHeroLink = qs('#bookmarkletHeroLink');
-  dom.bookmarkletSettings = qs('#bookmarkletSettings');
   dom.languageHint = qs('#languageHint');
   dom.headingMode = qs('#headingMode');
   dom.languageHintUrl = qs('#languageHintUrl');
@@ -1115,7 +1066,6 @@ export const initApp = async () => {
   setupKeyboardShortcuts();
   await updateVoices();
   startTicker();
-  handleHashImport();
 
   if (appState.queue.length && !appState.playback.currentId) {
     appState.playback.currentId = appState.queue[0].id;

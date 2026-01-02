@@ -66,47 +66,6 @@ body {
   color: var(--muted);
 }
 
-.hero__chips {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-
-.chip {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 6px 14px;
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.chip--accent {
-  background: var(--accent);
-  border-color: transparent;
-  color: white;
-  text-decoration: none;
-}
-
-.hero__cta {
-  margin-top: 16px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  border: 1px dashed var(--border);
-  background: rgba(74, 76, 246, 0.08);
-}
-
-.hero__cta h3 {
-  margin: 0 0 6px;
-}
-
-.hero__cta p {
-  margin: 0 0 10px;
-  color: var(--muted);
-}
-
 .button {
   background: var(--accent);
   color: white;
@@ -378,22 +337,6 @@ textarea {
   margin-top: 8px;
 }
 
-.queue-item__notice {
-  margin-top: 8px;
-  padding: 10px 12px;
-  background: rgba(74, 76, 246, 0.08);
-  border-radius: 12px;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.queue-item__notice-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-
 .paste-panel {
   margin-top: 12px;
 }
@@ -459,11 +402,6 @@ textarea {
 
 .hidden {
   display: none;
-}
-
-.hint {
-  color: var(--muted);
-  margin-top: 8px;
 }
 
 .sr-only {

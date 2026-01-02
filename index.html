@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>QueueTTS · Local-first text-to-speech queue</title>
-    <link rel="stylesheet" href="./assets/css/app.css" />
+    <link rel="stylesheet" href="assets/css/app.css" />
   </head>
   <body>
     <div id="app" class="app">
@@ -12,15 +12,6 @@
         <div>
           <h1>QueueTTS</h1>
           <p class="subtitle">Local-first TTS queue for articles and pasted text.</p>
-          <div class="hero__chips">
-            <button class="chip" id="sampleChip">Try sample</button>
-            <a class="chip chip--accent" id="bookmarkletHero" href="#">Install bookmarklet</a>
-          </div>
-          <div class="hero__cta">
-            <h3>Install bookmarklet</h3>
-            <p>Drag “QueueTTS: Import Page” to your bookmarks bar, then click it on any article page.</p>
-            <a class="button button--ghost" id="bookmarkletHeroLink" href="#">QueueTTS: Import Page</a>
-          </div>
         </div>
         <div class="header__actions">
           <button class="button button--ghost" id="themeToggle">Theme</button>
@@ -105,7 +96,7 @@
       <section class="add-panel">
         <div class="add-tabs">
           <button class="tab tab--active" data-mode="paste">Paste text</button>
-          <button class="tab" data-mode="url">URL (best effort)</button>
+          <button class="tab" data-mode="url">Add URL</button>
         </div>
         <div class="add-body">
           <div class="add-pane" data-pane="paste">
@@ -139,7 +130,7 @@
             <div class="add-actions">
               <button class="button" id="addUrl">Fetch &amp; add</button>
             </div>
-            <p class="hint">Many sites block this. Bookmarklet works everywhere.</p>
+            <p class="hint">If extraction fails or CORS blocks the request, you can paste the text per item.</p>
           </div>
         </div>
       </section>
@@ -179,11 +170,6 @@
           <textarea id="dictInput" placeholder="custom term => replacement, one per line"></textarea>
           <button class="button button--ghost" id="saveDict">Save dictionary</button>
         </div>
-        <div>
-          <h2>Bookmarklet</h2>
-          <p>Drag the link to your bookmarks bar, then click it on any article page.</p>
-          <a class="button button--ghost" id="bookmarkletSettings" href="#">QueueTTS: Import Page</a>
-        </div>
       </section>
 
       <section class="help" id="shortcuts">
@@ -204,6 +190,6 @@
       <div class="sr-only" id="ariaLive" aria-live="polite"></div>
     </div>
 
-    <script type="module" src="./assets/js/main.js"></script>
+    <script type="module" src="assets/js/main.js"></script>
   </body>
 </html>
