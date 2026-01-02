@@ -28,7 +28,7 @@ export const renderQueue = ({ container, queue, currentId, onAction, onPaste }) 
     status.innerHTML = `<span></span>${stateLabels[item.state] || item.state}`;
     content.append(title, meta, status);
 
-    if (item.error && item.state === 'error') {
+    if (item.error) {
       const error = create('div', { className: 'queue-item__meta', text: item.error });
       content.append(error);
     }
@@ -40,21 +40,10 @@ export const renderQueue = ({ container, queue, currentId, onAction, onPaste }) 
     }
 
     if (item.state === 'needs_paste') {
-      if (item.notice) {
-        const notice = create('div', { className: 'queue-item__notice', text: item.notice });
-        const noticeActions = create('div', { className: 'queue-item__notice-actions' });
-        const copy = create('button', { className: 'button button--ghost', text: 'Copy instructions' });
-        copy.addEventListener('click', () => {
-          navigator.clipboard?.writeText('QueueTTS bookmarklet: drag “QueueTTS: Import Page” to your bookmarks bar, then click it on the article page. Or paste the text below.');
-        });
-        noticeActions.append(copy);
-        notice.append(noticeActions);
-        content.append(notice);
-      }
       const paste = create('div', { className: 'paste-panel' });
       const textarea = create('textarea');
       textarea.placeholder = 'Paste extracted text here...';
-      const button = create('button', { className: 'button', text: 'Use pasted text' });
+      const button = create('button', { className: 'button', text: 'Save pasted text' });
       button.addEventListener('click', () => onPaste(item.id, textarea.value));
       paste.append(textarea, button);
       content.append(paste);
