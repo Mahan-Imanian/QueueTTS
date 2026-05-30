@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QueueTTS</title>
+    <link rel="stylesheet" href="../styles/base.css" />
+    <link rel="stylesheet" href="../styles/popup.css" />
+  </head>
+  <body class="popup-shell">
+    <main class="popup" aria-label="QueueTTS popup">
+      <header class="popup-header">
+        <a class="brand" href="sidepanel.html" target="_blank" aria-label="Open QueueTTS">
+          <span class="brand-mark"><img src="../assets/icons/mark.svg" alt="" /></span>
+          <span><span class="brand-kicker">Listen later</span><span class="brand-name">QueueTTS</span></span>
+        </a>
+        <span class="status-badge" id="statusBadge">Idle</span>
+      </header>
+
+      <section class="panel now-panel" aria-labelledby="nowTitle">
+        <div class="row-between">
+          <p class="kicker">Now playing</p>
+          <button class="button ghost small" id="openQueue" type="button">Open queue</button>
+        </div>
+        <h1 id="nowTitle">Nothing queued</h1>
+        <p id="nowMeta" class="muted">Capture selected text, this page, or paste text.</p>
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress"><span></span></div>
+        <p class="spoken" id="spokenText">QueueTTS stores captures locally and speaks through Chrome text-to-speech.</p>
+        <div class="mini-transport" aria-label="Playback controls">
+          <button class="icon-button" id="prevItem" type="button" aria-label="Previous item">‹</button>
+          <button class="icon-button" id="prevSegment" type="button" aria-label="Previous segment">−</button>
+          <button class="icon-button primary large" id="playPause" type="button" aria-label="Play or pause">▶</button>
+          <button class="icon-button" id="nextSegment" type="button" aria-label="Next segment">+</button>
+          <button class="icon-button" id="nextItem" type="button" aria-label="Next item">›</button>
+        </div>
+      </section>
+
+      <section class="capture-grid" aria-label="Capture actions">
+        <button class="button primary full" id="captureSelection" type="button">Add selected text</button>
+        <button class="button secondary full" id="capturePage" type="button">Add this page</button>
+      </section>
+
+      <section class="panel paste-panel" aria-labelledby="pasteTitle">
+        <div class="row-between">
+          <p class="kicker" id="pasteTitle">Quick paste</p>
+          <span class="muted" id="pasteStats">0 words</span>
+        </div>
+        <label class="sr-only" for="pasteInput">Paste text</label>
+        <textarea id="pasteInput" rows="4" placeholder="Paste text to queue..."></textarea>
+        <div class="row-between">
+          <button class="button secondary" id="clearPaste" type="button">Clear</button>
+          <button class="button primary" id="addPaste" type="button">Add</button>
+        </div>
+      </section>
+
+      <section class="meta-grid" aria-label="Queue summary">
+        <div class="meta-tile"><span class="meta-label">Queue</span><strong id="queueCount">0</strong></div>
+        <div class="meta-tile"><span class="meta-label">Today</span><strong id="todayCount">0</strong></div>
+        <div class="meta-tile"><span class="meta-label">Time</span><strong id="timeCount">0:00</strong></div>
+      </section>
+
+      <p class="notice" id="statusNotice">Use the context menu on any page for the fastest capture.</p>
+    </main>
+    <div class="toast-stack" id="toasts" aria-live="polite"></div>
+    <script type="module" src="../src/popup.js"></script>
+  </body>
+</html>

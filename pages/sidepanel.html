@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QueueTTS Queue</title>
+    <link rel="stylesheet" href="../styles/base.css" />
+    <link rel="stylesheet" href="../styles/sidepanel.css" />
+  </head>
+  <body>
+    <a class="sr-only" href="#queueList">Skip to queue</a>
+    <header class="app-top">
+      <a class="brand" href="#top" id="top" aria-label="QueueTTS home">
+        <span class="brand-mark"><img src="../assets/icons/mark.svg" alt="" /></span>
+        <span><span class="brand-kicker">Private speech queue</span><span class="brand-name">QueueTTS</span></span>
+      </a>
+      <div class="top-actions">
+        <button class="button secondary small" id="commandOpen" type="button">⌘K</button>
+        <button class="button secondary small" id="settingsOpen" type="button">Settings</button>
+      </div>
+    </header>
+
+    <main class="side-shell">
+      <section class="panel onboarding" id="onboarding" aria-labelledby="onboardingTitle">
+        <div>
+          <p class="kicker">Local-first</p>
+          <h1 id="onboardingTitle">Capture text from the browser and listen later.</h1>
+          <p>Use the toolbar popup or page context menu for fast capture. QueueTTS stores text in Chrome local storage, uses Chrome text-to-speech, and does not send captures to a server.</p>
+        </div>
+        <div class="onboarding-actions">
+          <button class="button primary" id="onboardPage" type="button">Capture current page</button>
+          <button class="button secondary" id="onboardDone" type="button">Got it</button>
+        </div>
+      </section>
+
+      <section class="panel now-section" aria-labelledby="nowTitle">
+        <div class="section-head">
+          <div>
+            <p class="kicker">Now playing</p>
+            <h1 id="nowTitle">Nothing queued</h1>
+          </div>
+          <span class="status-badge" id="statusBadge">Idle</span>
+        </div>
+        <p class="muted" id="nowMeta">Capture a page, selection, or paste text to begin.</p>
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress"><span></span></div>
+        <div class="segment-card" aria-live="polite">
+          <span class="meta-label" id="segmentLabel">Ready</span>
+          <p id="segmentText">No readable segment is active.</p>
+        </div>
+        <div class="transport-row" aria-label="Playback controls">
+          <button class="icon-button" id="prevItem" type="button" aria-label="Previous item">‹</button>
+          <button class="icon-button" id="prevSegment" type="button" aria-label="Previous segment">−</button>
+          <button class="icon-button primary large" id="playPause" type="button" aria-label="Play or pause">▶</button>
+          <button class="icon-button" id="nextSegment" type="button" aria-label="Next segment">+</button>
+          <button class="icon-button" id="nextItem" type="button" aria-label="Next item">›</button>
+        </div>
+        <div class="control-strip">
+          <button class="chip" data-seek="-30" type="button">−30s</button>
+          <button class="chip" data-seek="-15" type="button">−15s</button>
+          <button class="chip" data-seek="15" type="button">+15s</button>
+          <button class="chip" data-seek="30" type="button">+30s</button>
+          <button class="chip" id="focusOpen" type="button">Focus</button>
+          <label class="sleep-control" for="sleepSelect"><span>Sleep</span><select id="sleepSelect"><option value="0">Off</option><option value="5">5m</option><option value="10">10m</option><option value="20">20m</option><option value="30">30m</option><option value="45">45m</option><option value="60">60m</option></select></label>
+        </div>
+      </section>
+
+      <section class="panel capture-section" aria-labelledby="captureTitle">
+        <div class="section-head">
+          <div>
+            <p class="kicker">Capture</p>
+            <h2 id="captureTitle">Add listening material</h2>
+          </div>
+          <div class="tabs" role="tablist" aria-label="Capture source">
+            <button class="tab active" data-tab="page" type="button" role="tab" aria-selected="true">Page</button>
+            <button class="tab" data-tab="selection" type="button" role="tab" aria-selected="false">Selection</button>
+            <button class="tab" data-tab="paste" type="button" role="tab" aria-selected="false">Paste</button>
+          </div>
+        </div>
+        <div class="capture-pane" data-pane="page">
+          <p class="muted">Extract the readable text from the current tab. You can review and edit before it enters the queue.</p>
+          <button class="button primary full" id="capturePage" type="button">Preview current page</button>
+        </div>
+        <div class="capture-pane hidden" data-pane="selection">
+          <p class="muted">Select text on a page, then preview it here or use the right-click context menu for one-click capture.</p>
+          <button class="button primary full" id="captureSelection" type="button">Preview selected text</button>
+        </div>
+        <div class="capture-pane hidden" data-pane="paste">
+          <label class="field" for="pasteInput"><span>Text</span><textarea id="pasteInput" rows="8" placeholder="Paste article text, notes, documentation, or a draft..."></textarea></label>
+          <div class="row-between">
+            <span class="muted" id="pasteStats">0 words · 0:00</span>
+            <button class="button primary" id="addPaste" type="button">Add pasted text</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="queue-tools" aria-label="Queue tools">
+        <label class="field search-field" for="queueSearch"><span class="sr-only">Search queue</span><input id="queueSearch" type="search" placeholder="Search queue, source, or URL" /></label>
+        <div class="filter-row" role="group" aria-label="Queue filters">
+          <button class="chip active" data-filter="all" type="button">All</button>
+          <button class="chip" data-filter="queued" type="button">Queued</button>
+          <button class="chip" data-filter="playing" type="button">Active</button>
+          <button class="chip" data-filter="completed" type="button">Done</button>
+          <button class="chip" data-filter="failed" type="button">Needs fix</button>
+        </div>
+      </section>
+
+      <section class="queue-summary meta-grid" aria-label="Queue summary">
+        <div class="meta-tile"><span class="meta-label">Items</span><strong id="summaryItems">0</strong></div>
+        <div class="meta-tile"><span class="meta-label">Queued</span><strong id="summaryQueued">0</strong></div>
+        <div class="meta-tile"><span class="meta-label">Time</span><strong id="summaryTime">0:00</strong></div>
+      </section>
+
+      <section class="queue-list" id="queueList" aria-label="Queue items"></section>
+
+      <section class="panel trust-panel" aria-labelledby="privacyTitle">
+        <div class="section-head">
+          <div>
+            <p class="kicker">Trust</p>
+            <h2 id="privacyTitle">Local by default</h2>
+          </div>
+          <button class="button secondary small" id="privacyOpen" type="button">Privacy</button>
+        </div>
+        <p class="muted">Queue items, settings, and statistics are stored in Chrome local storage. Speech is handled by Chrome text-to-speech. QueueTTS has no backend, account system, or analytics.</p>
+      </section>
+    </main>
+
+    <div class="modal-backdrop hidden" id="previewModal" role="dialog" aria-modal="true" aria-labelledby="previewTitle">
+      <section class="panel modal">
+        <div class="modal-head">
+          <div><p class="kicker" id="previewMode">Capture preview</p><h2 id="previewTitle">Review before adding</h2></div>
+          <button class="icon-button" id="previewClose" type="button" aria-label="Close preview">×</button>
+        </div>
+        <div class="preview-grid">
+          <label class="field" for="previewTitleInput"><span>Title</span><input id="previewTitleInput" type="text" /></label>
+          <label class="field" for="previewUrlInput"><span>Source URL</span><input id="previewUrlInput" type="url" /></label>
+        </div>
+        <label class="field" for="previewText"><span>Text</span><textarea id="previewText" rows="14"></textarea></label>
+        <p class="notice" id="previewNotice">Review extraction quality before adding.</p>
+        <div class="modal-actions">
+          <button class="button secondary" id="previewPlay" type="button">Add and play</button>
+          <button class="button primary" id="previewAdd" type="button">Add to queue</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop hidden" id="focusModal" role="dialog" aria-modal="true" aria-labelledby="focusTitle">
+      <section class="panel modal focus-modal">
+        <div class="modal-head">
+          <div><p class="kicker">Focus mode</p><h2 id="focusTitle">Listening view</h2></div>
+          <button class="icon-button" id="focusClose" type="button" aria-label="Close focus mode">×</button>
+        </div>
+        <p class="focus-title" id="focusItemTitle">Nothing queued</p>
+        <p class="focus-text" id="focusText">No active segment.</p>
+        <div class="transport-row">
+          <button class="button secondary" data-focus-action="prev" type="button">Previous segment</button>
+          <button class="button primary" data-focus-action="toggle" type="button">Play / pause</button>
+          <button class="button secondary" data-focus-action="next" type="button">Next segment</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop hidden" id="commandModal" role="dialog" aria-modal="true" aria-labelledby="commandTitle">
+      <section class="panel modal command-modal">
+        <h2 id="commandTitle" class="sr-only">Command menu</h2>
+        <label class="field" for="commandInput"><span>Command</span><input id="commandInput" type="search" placeholder="Search actions..." autocomplete="off" /></label>
+        <div class="command-list" id="commandList" role="listbox"></div>
+      </section>
+    </div>
+
+    <div class="toast-stack" id="toasts" aria-live="polite"></div>
+    <input class="hidden" id="importFile" type="file" accept="application/json,.json" />
+    <script type="module" src="../src/sidepanel.js"></script>
+  </body>
+</html>

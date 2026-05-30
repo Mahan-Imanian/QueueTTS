@@ -1,0 +1,100 @@
+html,
+body {
+  width: 390px;
+  min-height: 560px;
+  max-height: 600px;
+  overflow: hidden;
+}
+
+.popup-shell {
+  background: radial-gradient(380px 260px at 20% -10%, rgba(142, 232, 200, 0.2), transparent 58%), linear-gradient(145deg, var(--bg), var(--bg-elevated));
+}
+
+.popup {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.now-panel,
+.paste-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.now-panel h1 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.16;
+  letter-spacing: -0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spoken {
+  display: -webkit-box;
+  min-height: 48px;
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.mini-transport {
+  display: grid;
+  grid-template-columns: 40px 40px 1fr 40px 40px;
+  gap: 8px;
+  align-items: center;
+}
+
+.mini-transport .primary {
+  width: 100%;
+}
+
+.capture-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.paste-panel textarea {
+  min-height: 88px;
+  max-height: 110px;
+}
+
+.notice {
+  margin: 0;
+}
+
+.toast-stack {
+  right: 12px;
+  bottom: 12px;
+  width: calc(100% - 24px);
+}
+
+@media (max-width: 360px) {
+  html,
+  body {
+    width: 320px;
+  }
+
+  .capture-grid,
+  .meta-grid {
+    grid-template-columns: 1fr;
+  }
+}
