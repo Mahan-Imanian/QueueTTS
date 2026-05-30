@@ -1,1 +1,9 @@
+node_modules/
+dist/
+build/
+.cache/
+.tmp/
+.DS_Store
+*.log
+coverage/
 android/

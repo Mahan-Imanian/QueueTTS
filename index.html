@@ -4,350 +4,360 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark light" />
-    <title>QueueTTS · Local-first text-to-speech queue</title>
+    <meta name="description" content="QueueTTS is a local-first text-to-speech queue for pasted articles and saved reading sessions." />
+    <title>QueueTTS · Premium local-first text-to-speech queue</title>
+    <link rel="icon" href="assets/img/mark.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/css/app.css" />
   </head>
-
   <body>
-    <a class="skip" href="#main">Skip to content</a>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="ambient" aria-hidden="true"></div>
 
-    <div class="bg" aria-hidden="true"></div>
+    <header class="app-header" data-reveal>
+      <a class="brand" href="#main" aria-label="QueueTTS home">
+        <span class="brand__mark" aria-hidden="true"><img src="assets/img/mark.svg" alt="" /></span>
+        <span class="brand__copy">
+          <span class="eyebrow">Local-first speech queue</span>
+          <span class="brand__name">QueueTTS</span>
+        </span>
+      </a>
 
-    <header class="top" role="banner">
-      <div class="brand">
-        <div class="brandMark" aria-hidden="true">
-          <svg viewBox="0 0 64 64" role="img" aria-label="QueueTTS">
-            <defs>
-              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="currentColor" stop-opacity="0.92"></stop>
-                <stop offset="1" stop-color="currentColor" stop-opacity="0.55"></stop>
-              </linearGradient>
-            </defs>
-            <path
-              d="M16 40c4.5 6.5 11 10 20 10 10.5 0 18-5.5 18-15 0-8-5-12.5-14-14l-6-1c-5.5-.9-8-3-8-6.5C26 9 30 6 35.5 6 42 6 47 9 50 14"
-              fill="none"
-              stroke="url(#g)"
-              stroke-width="3.25"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M14 50h18c8.5 0 14-4.5 14-12 0-7-4.2-10-11.5-11.3l-4.5-.8"
-              fill="none"
-              stroke="url(#g)"
-              stroke-width="3.25"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </div>
-
-        <div class="brandText">
-          <h1 class="brandName">QueueTTS</h1>
-          <p class="brandTag">Local-first text-to-speech queue for articles and pasted text.</p>
-          <div class="chips" aria-label="Product constraints">
-            <span class="chip" role="note">Static site</span>
-            <span class="chip" role="note">Local-first</span>
-            <span class="chip" role="note">No tracking</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="topActions" aria-label="Global actions">
-        <button class="btn btnGhost" type="button" id="themeBtn" aria-label="Theme">Theme</button>
-        <button class="btn btnGhost" type="button" id="contrastBtn" aria-label="High contrast">Contrast</button>
-        <button class="btn btnGhost" type="button" id="motionBtn" aria-label="Reduce motion">Motion</button>
-        <button class="btn btnGhost" type="button" id="cmdBtn" aria-label="Command palette" data-tooltip="Ctrl/⌘ K">Commands</button>
-        <button class="btn btnGhost" type="button" id="helpBtn" aria-label="Keyboard shortcuts" data-tooltip="?">Shortcuts</button>
-      </div>
+      <nav class="quick-actions" aria-label="Global actions">
+        <button class="button button--ghost" type="button" id="themeToggle">Theme</button>
+        <button class="button button--ghost" type="button" id="contrastToggle">Contrast</button>
+        <button class="button button--ghost" type="button" id="motionToggle">Motion</button>
+        <button class="button button--ghost" type="button" id="shortcutsToggle">Shortcuts</button>
+        <button class="button button--primary" type="button" id="cmdkOpen">Commands</button>
+      </nav>
     </header>
 
-    <main id="main" class="main" role="main">
-      <section class="grid">
-        <div class="col">
-          <section class="panel" aria-label="Playback controls">
-            <header class="panelHead">
-              <h2 class="h2">Playback</h2>
-              <p class="sub">Keyboard-first. Touch-friendly. Local-first.</p>
-            </header>
-
-            <div class="row">
-              <button class="btn btnPrimary" type="button" id="playBtn">Play</button>
-              <button class="btn btnGhost" type="button" id="prevItemBtn">Prev item</button>
-              <button class="btn btnGhost" type="button" id="nextItemBtn">Next item</button>
-            </div>
-
-            <div class="row">
-              <button class="btn btnGhost" type="button" id="prevSegBtn" aria-label="Previous sentence">⟵ Sentence</button>
-              <button class="btn btnGhost" type="button" id="nextSegBtn" aria-label="Next sentence">Sentence ⟶</button>
-
-              <div class="row rowTight" role="group" aria-label="Seek controls">
-                <button class="btn btnGhost" type="button" id="seekBackBtn" data-tooltip="," aria-label="Seek back by skip interval">−</button>
-                <button class="btn btnGhost" type="button" id="seekFwdBtn" data-tooltip="." aria-label="Seek forward by skip interval">+</button>
-                <span class="sep" aria-hidden="true"></span>
-                <button class="btn btnGhost" type="button" data-seek="-10">-10s</button>
-                <button class="btn btnGhost" type="button" data-seek="-15">-15s</button>
-                <button class="btn btnGhost" type="button" data-seek="-30">-30s</button>
-                <span class="sep" aria-hidden="true"></span>
-                <button class="btn btnGhost" type="button" data-seek="10">+10s</button>
-                <button class="btn btnGhost" type="button" data-seek="15">+15s</button>
-                <button class="btn btnGhost" type="button" data-seek="30">+30s</button>
-              </div>
-            </div>
-
-            <div class="form3">
-              <div class="field">
-                <label class="lbl" for="voiceSearch">Voice</label>
-                <input id="voiceSearch" class="in" type="text" autocomplete="off" placeholder="Search voices" />
-                <select id="voiceSelect" class="in" aria-label="Voice selection"></select>
-                <div class="meta" id="voiceMeta">Loading voices…</div>
-              </div>
-
-              <div class="field">
-                <label class="lbl" for="rate">Rate</label>
-                <div class="row rowTight">
-                  <input id="rate" class="range" type="range" min="0.75" max="2" step="0.05" />
-                  <div class="pillVal" id="rateVal" aria-label="Rate value">1.00×</div>
-                </div>
-                <div class="row rowTight" role="group" aria-label="Rate presets">
-                  <button class="pill" type="button" data-rate="0.75">0.75×</button>
-                  <button class="pill" type="button" data-rate="1">1×</button>
-                  <button class="pill" type="button" data-rate="1.25">1.25×</button>
-                  <button class="pill" type="button" data-rate="1.5">1.5×</button>
-                  <button class="pill" type="button" data-rate="2">2×</button>
-                </div>
-              </div>
-
-              <div class="field">
-                <label class="lbl" for="skip">Skip interval</label>
-                <select id="skip" class="in" aria-label="Skip interval">
-                  <option value="10">10s</option>
-                  <option value="15">15s</option>
-                  <option value="30">30s</option>
-                </select>
-                <div class="meta">Used for “,” and “.” seek, and ± buttons.</div>
-              </div>
-            </div>
-
-            <div class="banner hidden" id="speechBanner" role="status" aria-live="polite"></div>
-          </section>
-
-          <section class="panel" aria-label="Add to queue">
-            <header class="panelHead">
-              <h2 class="h2">Add</h2>
-              <p class="sub">Paste instantly or fetch a URL. Extraction failures are expected and handled.</p>
-            </header>
-
-            <div class="tabs" role="tablist" aria-label="Add mode">
-              <button class="tab" type="button" id="tabPaste" role="tab" aria-selected="true" aria-controls="panePaste">Paste</button>
-              <button class="tab" type="button" id="tabUrl" role="tab" aria-selected="false" aria-controls="paneUrl">URL</button>
-            </div>
-
-            <div class="panes">
-              <div id="panePaste" class="pane" role="tabpanel" aria-labelledby="tabPaste">
-                <div class="field">
-                  <label class="lbl" for="paste">Text</label>
-                  <textarea id="paste" class="ta" placeholder="Paste article text here…"></textarea>
-                  <div class="row rowBetween">
-                    <div class="meta" id="pasteMeta">0 characters</div>
-                    <div class="meta" id="pasteEst">Estimated: 0:00</div>
-                  </div>
-                </div>
-
-                <div class="form2">
-                  <div class="field">
-                    <label class="lbl" for="langPaste">Language hint</label>
-                    <input id="langPaste" class="in" type="text" placeholder="e.g. en-US" />
-                  </div>
-                  <div class="field">
-                    <label class="lbl" for="headPaste">Headings</label>
-                    <select id="headPaste" class="in" aria-label="Heading mode">
-                      <option value="cue">Heading cue</option>
-                      <option value="pause">Heading pause</option>
-                      <option value="off">Heading off</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="row rowBetween">
-                  <label class="toggle" for="cleanup">
-                    <input id="cleanup" type="checkbox" />
-                    <span>Quick cleanup</span>
-                  </label>
-                  <button class="btn btnPrimary" type="button" id="addPasteBtn">Add to queue</button>
-                </div>
-              </div>
-
-              <div id="paneUrl" class="pane hidden" role="tabpanel" aria-labelledby="tabUrl">
-                <div class="field">
-                  <label class="lbl" for="url">Article URL</label>
-                  <input id="url" class="in" type="url" placeholder="https://example.com/article" />
-                  <div class="meta">If fetch fails (CORS), use Paste.</div>
-                </div>
-
-                <div class="form2">
-                  <div class="field">
-                    <label class="lbl" for="langUrl">Language hint</label>
-                    <input id="langUrl" class="in" type="text" placeholder="e.g. en-US" />
-                  </div>
-                  <div class="field">
-                    <label class="lbl" for="headUrl">Headings</label>
-                    <select id="headUrl" class="in" aria-label="Heading mode for URL">
-                      <option value="cue">Heading cue</option>
-                      <option value="pause">Heading pause</option>
-                      <option value="off">Heading off</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="row rowBetween">
-                  <div class="meta" id="urlMeta">Ready.</div>
-                  <button class="btn btnPrimary" type="button" id="addUrlBtn">Fetch &amp; add</button>
-                </div>
-
-                <div class="callout hidden" id="urlError" role="status" aria-live="polite"></div>
-              </div>
-            </div>
-          </section>
+    <main class="shell" id="main">
+      <section class="hero panel panel--hero" data-reveal aria-labelledby="heroTitle">
+        <div class="hero__copy">
+          <p class="eyebrow">Continuous listening for long-form text</p>
+          <h1 id="heroTitle">Turn articles, notes, and drafts into a refined speech queue.</h1>
+          <p class="hero__lead">Paste text, fetch a readable URL, organize the queue, and listen through sentence-safe segments with local settings and no account required.</p>
+          <div class="hero__badges" aria-label="Product qualities">
+            <span class="badge">Runs in browser</span>
+            <span class="badge">Local storage</span>
+            <span class="badge">Keyboard-first</span>
+            <span class="badge">No tracking</span>
+          </div>
         </div>
-
-        <div class="col">
-          <section class="panel panelGlow" aria-label="Now playing" aria-live="polite">
-            <header class="panelHead row rowBetween">
-              <div>
-                <h2 class="h2">Now Playing</h2>
-                <div class="title" id="nowTitle">Nothing queued</div>
-                <div class="sub" id="nowStatus">Add text or a URL to begin.</div>
-              </div>
-
-              <div class="row">
-                <button class="btn btnGhost" type="button" id="focusBtn">Focus</button>
-                <button class="btn btnGhost" type="button" id="moreBtn" aria-haspopup="menu" aria-expanded="false">More</button>
-              </div>
-            </header>
-
-            <div class="progress" aria-label="Playback progress">
-              <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar">
-                <div class="barFill" id="barFill"></div>
-              </div>
-              <div class="row rowBetween mono">
-                <span id="elapsed">0:00</span>
-                <span id="remaining">-0:00</span>
-              </div>
-            </div>
-
-            <div class="speak">
-              <div class="row rowBetween">
-                <div class="chip chipLive" id="stateChip">Ready</div>
-                <div class="meta" id="sleepLabel">Sleep timer: off</div>
-              </div>
-              <div class="speakText" id="speakText">Add an item to start listening.</div>
-            </div>
-
-            <div class="split">
-              <div class="stack">
-                <div class="h3">Up next</div>
-                <ol class="next" id="upNext" aria-label="Up next"></ol>
-              </div>
-
-              <div class="stack">
-                <div class="h3">Session</div>
-                <div class="stats">
-                  <div class="stat">
-                    <div class="meta">Listening today</div>
-                    <div class="statVal" id="todayVal">0:00</div>
-                  </div>
-                  <div class="stat">
-                    <div class="meta">Items finished today</div>
-                    <div class="statVal" id="doneVal">0</div>
-                  </div>
-                </div>
-                <div class="sparkWrap" aria-label="Listening activity">
-                  <svg class="spark" id="spark" viewBox="0 0 200 56" preserveAspectRatio="none" role="img" aria-label="Listening activity sparkline"></svg>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="panel" aria-label="Queue">
-            <header class="panelHead row rowBetween">
-              <h2 class="h2">Queue</h2>
-              <div class="row">
-                <input id="queueFilter" class="in inSmall" type="text" placeholder="Filter queue" aria-label="Filter queue" />
-                <button class="btn btnGhost" type="button" id="clearBtn">Clear</button>
-              </div>
-            </header>
-
-            <div class="list" id="queueList" role="list" aria-label="Queue items"></div>
-
-            <div class="empty hidden" id="queueEmpty" role="status" aria-live="polite">
-              <div class="emptyTitle">Queue is empty</div>
-              <div class="meta">Paste text or fetch a URL, then press Space to start.</div>
-            </div>
-          </section>
-
-          <section class="panel" aria-label="Settings">
-            <header class="panelHead">
-              <h2 class="h2">Settings</h2>
-              <p class="sub">Stored locally on this device.</p>
-            </header>
-
-            <div class="form2">
-              <div class="field">
-                <label class="lbl" for="sleep">Sleep timer</label>
-                <div class="row">
-                  <select id="sleep" class="in" aria-label="Sleep timer">
-                    <option value="off">Off</option>
-                    <option value="5">5 minutes</option>
-                    <option value="10">10 minutes</option>
-                    <option value="20">20 minutes</option>
-                    <option value="30">30 minutes</option>
-                    <option value="end">End of item</option>
-                  </select>
-                  <button class="btn btnGhost" type="button" id="sleepSet">Set</button>
-                  <button class="btn btnGhost" type="button" id="sleepCancel">Cancel</button>
-                </div>
-              </div>
-
-              <div class="field">
-                <label class="lbl" for="dict">Pronunciation dictionary</label>
-                <textarea id="dict" class="ta taSmall" placeholder="term => replacement, one per line"></textarea>
-                <div class="row rowBetween">
-                  <div class="meta">Applied locally during playback.</div>
-                  <button class="btn btnGhost" type="button" id="dictSave">Save</button>
-                </div>
-              </div>
-            </div>
-          </section>
+        <div class="hero__meter" aria-label="Current session overview">
+          <div class="orb" aria-hidden="true"><span></span></div>
+          <div class="hero-stat">
+            <span>Queue</span>
+            <strong id="heroQueueCount">0</strong>
+          </div>
+          <div class="hero-stat">
+            <span>Estimated</span>
+            <strong id="heroEstimate">0:00</strong>
+          </div>
+          <div class="hero-stat">
+            <span>Completed today</span>
+            <strong id="heroDone">0</strong>
+          </div>
         </div>
       </section>
 
-      <footer class="foot" role="contentinfo">
-        <div>QueueTTS</div>
-        <div>Local-first. Static. No tracking.</div>
-      </footer>
+      <section class="workspace" aria-label="QueueTTS workspace">
+        <div class="stack stack--left">
+          <section class="panel playback-card" data-reveal aria-labelledby="playbackTitle">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Playback</p>
+                <h2 id="playbackTitle">Control center</h2>
+              </div>
+              <span class="status-pill" id="statusChip">Idle</span>
+            </div>
 
-      <div id="toast" class="toasts" role="region" aria-live="polite" aria-label="Notifications"></div>
-      <div id="live" class="sr" aria-live="polite"></div>
+            <div class="now-card" aria-live="polite">
+              <div>
+                <p class="label">Now playing</p>
+                <h3 id="nowTitle">Nothing queued</h3>
+                <p id="nowStatus">Add text or fetch a URL to begin.</p>
+              </div>
+              <button class="icon-button" type="button" id="focusMode" aria-label="Toggle focus mode">Focus</button>
+            </div>
 
-      <input id="importFile" type="file" accept="application/json" hidden />
+            <div class="progress-block">
+              <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
+                <span id="progressFill"></span>
+              </div>
+              <div class="progress-meta">
+                <span id="elapsedTime">0:00</span>
+                <span id="remainingTime">-0:00</span>
+              </div>
+            </div>
+
+            <div class="sentence-card">
+              <div class="sentence-card__top">
+                <span class="label" id="sentenceLabel">Ready</span>
+                <span class="muted" id="sleepLabel">Sleep timer off</span>
+              </div>
+              <p id="spokenText">Add an item to start listening.</p>
+            </div>
+
+            <div class="transport" aria-label="Playback transport">
+              <button class="button button--primary button--xl" type="button" id="playPause">Play</button>
+              <button class="button button--ghost" type="button" id="prevItem">Prev item</button>
+              <button class="button button--ghost" type="button" id="nextItem">Next item</button>
+              <button class="button button--ghost" type="button" id="prevSentence">Prev sentence</button>
+              <button class="button button--ghost" type="button" id="nextSentence">Next sentence</button>
+            </div>
+
+            <div class="seekers" aria-label="Seek controls">
+              <button class="chip-button" type="button" data-seek="-30">-30s</button>
+              <button class="chip-button" type="button" data-seek="-15">-15s</button>
+              <button class="chip-button" type="button" data-seek="-10">-10s</button>
+              <button class="chip-button" type="button" data-seek="10">+10s</button>
+              <button class="chip-button" type="button" data-seek="15">+15s</button>
+              <button class="chip-button" type="button" data-seek="30">+30s</button>
+            </div>
+          </section>
+
+          <section class="panel add-card" data-reveal aria-labelledby="addTitle">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Add content</p>
+                <h2 id="addTitle">Capture source</h2>
+              </div>
+              <div class="tabs" role="tablist" aria-label="Add source">
+                <button class="tab is-active" type="button" id="tabPaste" role="tab" aria-selected="true" aria-controls="pastePane">Paste</button>
+                <button class="tab" type="button" id="tabUrl" role="tab" aria-selected="false" aria-controls="urlPane">URL</button>
+              </div>
+            </div>
+
+            <div class="pane" id="pastePane" role="tabpanel" aria-labelledby="tabPaste">
+              <label class="field field--wide" for="pasteInput">
+                <span>Text</span>
+                <textarea id="pasteInput" rows="10" placeholder="Paste article text, notes, essays, or documentation here."></textarea>
+              </label>
+              <div class="form-grid">
+                <label class="field" for="pasteLanguage">
+                  <span>Language hint</span>
+                  <input id="pasteLanguage" type="text" placeholder="en-US" autocomplete="off" />
+                </label>
+                <label class="field" for="pasteHeadingMode">
+                  <span>Headings</span>
+                  <select id="pasteHeadingMode">
+                    <option value="cue">Read heading cue</option>
+                    <option value="pause">Pause after heading</option>
+                    <option value="off">Ignore headings</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-footer">
+                <label class="toggle" for="cleanupToggle"><input id="cleanupToggle" type="checkbox" checked /> <span>Clean pasted text</span></label>
+                <span class="muted" id="pasteStats">0 characters · 0:00 estimate</span>
+                <button class="button button--primary" type="button" id="addPaste">Add to queue</button>
+              </div>
+            </div>
+
+            <div class="pane hidden" id="urlPane" role="tabpanel" aria-labelledby="tabUrl">
+              <label class="field field--wide" for="urlInput">
+                <span>Article URL</span>
+                <input id="urlInput" type="url" placeholder="https://example.com/article" autocomplete="url" />
+              </label>
+              <div class="form-grid">
+                <label class="field" for="urlLanguage">
+                  <span>Language hint</span>
+                  <input id="urlLanguage" type="text" placeholder="en-US" autocomplete="off" />
+                </label>
+                <label class="field" for="urlHeadingMode">
+                  <span>Headings</span>
+                  <select id="urlHeadingMode">
+                    <option value="cue">Read heading cue</option>
+                    <option value="pause">Pause after heading</option>
+                    <option value="off">Ignore headings</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-footer">
+                <span class="muted" id="urlStatus">CORS-protected pages may require Paste.</span>
+                <button class="button button--primary" type="button" id="addUrl">Fetch and add</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel settings-card" data-reveal aria-labelledby="settingsTitle">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Preferences</p>
+                <h2 id="settingsTitle">Voice and behavior</h2>
+              </div>
+              <button class="button button--ghost" type="button" id="saveDict">Save dictionary</button>
+            </div>
+
+            <div class="form-grid form-grid--three">
+              <label class="field" for="voiceSearch">
+                <span>Voice search</span>
+                <input id="voiceSearch" type="search" placeholder="Search installed voices" autocomplete="off" />
+              </label>
+              <label class="field" for="voiceSelect">
+                <span>Voice</span>
+                <select id="voiceSelect"><option>Loading voices</option></select>
+              </label>
+              <label class="field" for="skipSelect">
+                <span>Skip interval</span>
+                <select id="skipSelect">
+                  <option value="10">10 seconds</option>
+                  <option value="15">15 seconds</option>
+                  <option value="30">30 seconds</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="range-field" for="rateRange">
+              <span>Speech rate <strong id="rateValue">1.00x</strong></span>
+              <input id="rateRange" type="range" min="0.75" max="2" step="0.05" value="1" />
+            </label>
+            <div class="rate-ticks" aria-label="Rate presets">
+              <button class="chip-button" type="button" data-rate="0.75">0.75x</button>
+              <button class="chip-button" type="button" data-rate="1">1x</button>
+              <button class="chip-button" type="button" data-rate="1.25">1.25x</button>
+              <button class="chip-button" type="button" data-rate="1.5">1.5x</button>
+              <button class="chip-button" type="button" data-rate="2">2x</button>
+            </div>
+
+            <div class="form-grid">
+              <label class="field" for="sleepSelect">
+                <span>Sleep timer</span>
+                <select id="sleepSelect">
+                  <option value="off">Off</option>
+                  <option value="5">5 minutes</option>
+                  <option value="10">10 minutes</option>
+                  <option value="20">20 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="end">End of item</option>
+                </select>
+              </label>
+              <div class="field field--actions">
+                <span>Timer controls</span>
+                <div class="inline-actions">
+                  <button class="button button--ghost" type="button" id="sleepStart">Set</button>
+                  <button class="button button--ghost" type="button" id="sleepCancel">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <label class="field field--wide" for="dictInput">
+              <span>Pronunciation dictionary</span>
+              <textarea id="dictInput" rows="5" placeholder="QueueTTS => Queue tee tee ess"></textarea>
+              <small>Use one replacement per line with term =&gt; spoken form.</small>
+            </label>
+          </section>
+        </div>
+
+        <aside class="stack stack--right" aria-label="Queue and session">
+          <section class="panel queue-card" data-reveal aria-labelledby="queueTitle">
+            <div class="section-head section-head--sticky">
+              <div>
+                <p class="eyebrow">Listening queue</p>
+                <h2 id="queueTitle">Up next</h2>
+              </div>
+              <div class="inline-actions">
+                <button class="button button--ghost" type="button" id="toggleCompact">Compact</button>
+                <button class="button button--ghost" type="button" id="exportQueue">Export</button>
+                <label class="button button--ghost file-button" for="importQueue">Import</label>
+                <input id="importQueue" type="file" accept="application/json" hidden />
+                <button class="button button--danger" type="button" id="clearQueue">Clear</button>
+              </div>
+            </div>
+
+            <label class="field field--wide queue-search" for="queueSearch">
+              <span>Filter queue</span>
+              <input id="queueSearch" type="search" placeholder="Search titles or text" autocomplete="off" />
+            </label>
+
+            <div class="queue-list" id="queueList" role="list" aria-label="Queued items"></div>
+            <div class="empty-state" id="queueEmpty" role="status">
+              <strong>No items queued</strong>
+              <span>Paste a text block or fetch a URL to create the first listening item.</span>
+            </div>
+          </section>
+
+          <section class="panel session-card" data-reveal aria-labelledby="sessionTitle">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Session</p>
+                <h2 id="sessionTitle">Activity</h2>
+              </div>
+              <span class="muted" id="dailyDate">Today</span>
+            </div>
+            <div class="stats-grid">
+              <div class="stat"><span>Listened today</span><strong id="listenedToday">0:00</strong></div>
+              <div class="stat"><span>Finished today</span><strong id="finishedToday">0</strong></div>
+              <div class="stat"><span>Words queued</span><strong id="wordsQueued">0</strong></div>
+              <div class="stat"><span>Segments</span><strong id="segmentsQueued">0</strong></div>
+            </div>
+            <svg class="sparkline" id="sparkline" viewBox="0 0 320 92" role="img" aria-label="Estimated listening time by item"></svg>
+          </section>
+        </aside>
+      </section>
     </main>
 
-    <div class="overlay hidden" id="overlay" aria-hidden="true"></div>
-
-    <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-hidden="true">
-      <div class="modalCard" role="document" aria-label="Dialog">
-        <header class="modalHead">
-          <div class="modalTitle" id="modalTitle"></div>
-          <button class="btn btnGhost btnIcon" type="button" id="modalClose" aria-label="Close">×</button>
-        </header>
-        <div class="modalBody" id="modalBody"></div>
-        <footer class="modalFoot" id="modalFoot"></footer>
+    <section class="shortcuts hidden" id="shortcuts" aria-label="Keyboard shortcuts">
+      <div class="shortcuts__card">
+        <div class="section-head">
+          <div><p class="eyebrow">Keyboard</p><h2>Shortcuts</h2></div>
+          <button class="icon-button" type="button" id="shortcutsClose" aria-label="Close shortcuts">Close</button>
+        </div>
+        <div class="shortcut-grid">
+          <span>Space</span><strong>Play or pause</strong>
+          <span>J / K</span><strong>Previous or next sentence</strong>
+          <span>P / N</span><strong>Previous or next item</strong>
+          <span>, / .</span><strong>Seek backward or forward</strong>
+          <span>F</span><strong>Focus mode</strong>
+          <span>Ctrl/⌘ K</span><strong>Commands</strong>
+          <span>?</span><strong>Shortcuts</strong>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="menu hidden" id="menu" role="menu" aria-hidden="true"></div>
+    <dialog class="dialog" id="cmdkDialog" aria-labelledby="cmdkTitle">
+      <form method="dialog" class="dialog__panel">
+        <div class="section-head">
+          <div><p class="eyebrow">Command menu</p><h2 id="cmdkTitle">Actions</h2></div>
+          <button class="icon-button" value="close" type="submit">Close</button>
+        </div>
+        <label class="field field--wide" for="cmdkSearch"><span>Search actions</span><input id="cmdkSearch" type="search" autocomplete="off" placeholder="Type a command" /></label>
+        <div class="command-list" id="cmdkList" role="listbox"></div>
+      </form>
+    </dialog>
 
-    <script type="module" src="assets/js/main.js"></script>
+    <dialog class="dialog" id="editDialog" aria-labelledby="editTitle">
+      <form method="dialog" class="dialog__panel">
+        <div class="section-head">
+          <div><p class="eyebrow">Queue item</p><h2 id="editTitle">Edit item</h2></div>
+          <button class="icon-button" value="cancel" type="submit">Close</button>
+        </div>
+        <label class="field field--wide" for="editTitleInput"><span>Title</span><input id="editTitleInput" type="text" /></label>
+        <label class="field field--wide" for="editTextInput"><span>Text</span><textarea id="editTextInput" rows="12"></textarea></label>
+        <menu class="dialog-actions">
+          <button class="button button--ghost" value="cancel" type="submit">Cancel</button>
+          <button class="button button--primary" value="save" type="submit">Save changes</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog class="dialog" id="confirmDialog" aria-labelledby="confirmTitle">
+      <form method="dialog" class="dialog__panel dialog__panel--small">
+        <div class="section-head">
+          <div><p class="eyebrow">Confirm</p><h2 id="confirmTitle">Continue?</h2></div>
+        </div>
+        <p id="confirmMessage" class="dialog-message">This action cannot be undone.</p>
+        <menu class="dialog-actions">
+          <button class="button button--ghost" value="cancel" type="submit">Cancel</button>
+          <button class="button button--danger" value="confirm" type="submit" id="confirmAccept">Continue</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <div class="toast-stack" id="toastStack" role="region" aria-live="polite" aria-label="Notifications"></div>
+    <div class="sr-only" id="ariaLive" aria-live="polite"></div>
+
+    <script type="module" src="assets/js/app.js"></script>
   </body>
 </html>
