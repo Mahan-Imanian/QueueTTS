@@ -1,9 +1,7 @@
 node_modules/
 dist/
-build/
-.cache/
-.tmp/
 .DS_Store
 *.log
+*.tmp
+.cache/
 coverage/
-android/

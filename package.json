@@ -1,12 +1,12 @@
 {
-  "name": "queuetts-premium",
-  "version": "1.0.0",
+  "name": "queuetts-extension",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
+  "description": "QueueTTS Chrome MV3 extension for local text-to-speech queues.",
   "scripts": {
-    "start": "python3 -m http.server 4173",
-    "check": "node scripts/verify.mjs",
-    "build": "node scripts/verify.mjs"
+    "check": "node scripts/check.mjs",
+    "build": "node scripts/check.mjs"
   },
   "dependencies": {},
   "devDependencies": {}
