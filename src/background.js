@@ -46,14 +46,28 @@ const setBadge = async () => {
   await chrome.action.setBadgeBackgroundColor({ color: state.playback.status === "playing" ? "#8ee8c8" : "#6d7183" });
 };
 
+const sendTabCaptureMessage = async (tabId, type) => {
+  await chrome.scripting.executeScript({ target: { tabId }, files: [CONTENT_FILE] });
+  return chrome.tabs.sendMessage(tabId, { type });
+};
+
 const captureTab = async (tabId, mode = "page") => {
   try {
-    await chrome.scripting.executeScript({ target: { tabId }, files: [CONTENT_FILE] });
-    const response = await chrome.tabs.sendMessage(tabId, { type: mode === "selection" ? "QTTS_CAPTURE_SELECTION" : "QTTS_CAPTURE_PAGE" });
+    const response = await sendTabCaptureMessage(tabId, mode === "selection" ? "QTTS_CAPTURE_SELECTION" : "QTTS_CAPTURE_PAGE");
     if (!response?.ok) return { ok: false, error: response?.error || "Capture failed.", capture: response?.capture || null };
     return { ok: true, capture: response.capture };
   } catch (error) {
     return { ok: false, error: error?.message || "Chrome blocked access to this page. Try a normal http or https page, use selected-text capture, or paste manually." };
+  }
+};
+
+const readTabContext = async (tabId) => {
+  try {
+    const response = await sendTabCaptureMessage(tabId, "QTTS_CAPTURE_CONTEXT");
+    if (response?.ok) return { ok: true, context: response.context };
+    return { ok: false, error: response?.error || "Could not read this page context." };
+  } catch (error) {
+    return { ok: false, error: error?.message || "Chrome blocked access to this page context." };
   }
 };
 
@@ -377,6 +391,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message?.type === "QTTS_OPEN_QUEUE") {
       const tab = sender.tab || await activeTab();
       return sendResponse(await openQueue(message.windowId || tab?.windowId).then(() => ({ ok: true })).catch((error) => ({ ok: false, error: error.message })));
+    }
+    if (message?.type === "QTTS_CONTEXT_ACTIVE") {
+      const tab = await activeTab();
+      if (!tab?.id) return sendResponse({ ok: false, error: "No active tab is available." });
+      const result = await readTabContext(tab.id);
+      if (!result.ok) return sendResponse({ ok: false, error: result.error, context: { title: tab.title || "Current tab", url: tab.url || "", selectionWords: 0, selectionPreview: "" } });
+      return sendResponse(result);
     }
     if (message?.type === "QTTS_CAPTURE_ACTIVE") {
       const tab = await activeTab();

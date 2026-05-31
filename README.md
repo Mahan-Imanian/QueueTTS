@@ -1,86 +1,90 @@
-# QueueTTS Chrome Extension
+# QueueTTS
 
-QueueTTS is a Manifest V3 Chrome extension for capturing readable text from the browser, organizing it into a local queue, and listening with Chrome text-to-speech.
+QueueTTS is a local-first Chrome extension for capturing readable text from the browser, queueing it, and listening later through Chrome text-to-speech.
 
-## What it does
-
-- Capture selected text from a webpage through the right-click menu or toolbar popup.
-- Capture the current page through the toolbar popup, side panel, or context menu.
-- Paste text directly into the popup or side panel.
-- Review and edit extracted page text before adding it to the queue from the side panel.
-- Listen with play, pause, previous item, next item, previous segment, next segment, and skip controls.
-- Manage queue items with search, filters, edit, duplicate, delete, reorder, retry, and queue-again actions.
-- Use focus mode for a cleaner long-listening view.
-- Configure voice, language, rate, pitch, volume, skip interval, headings, sleep timer, theme, motion, and pronunciation replacements.
-- Export, import, clear completed items, or clear all QueueTTS data.
+The extension works from the toolbar popup, right-click context menus, and the side panel queue manager. It does not require a local server, backend account, analytics, or remote JavaScript.
 
 ## Install dependencies
-
-No runtime dependencies are required.
 
 ```bash
 npm install
 ```
 
-## Build and checks
+The project has no runtime dependencies. The install step keeps the lockfile available for repeatable checks.
 
-There is no bundling step. The build command validates the extension structure, manifest, JavaScript syntax, required files, and asset references.
+## Validate the extension
 
 ```bash
 npm run check
 npm run build
 ```
 
-## Load as an unpacked Chrome extension
+Both commands run the static extension validator in `scripts/check.mjs`. It checks Manifest V3 structure, required files, local asset references, disallowed remote script references, broad host permission avoidance, and JavaScript syntax.
 
-1. Open Chrome.
-2. Go to `chrome://extensions`.
-3. Turn on Developer mode.
-4. Click Load unpacked.
-5. Select this project folder.
-6. Pin QueueTTS from the extensions menu for fast toolbar access.
+## Load unpacked in Chrome
+
+1. Open `chrome://extensions`.
+2. Enable Developer Mode.
+3. Select Load unpacked.
+4. Choose the project folder that contains `manifest.json`.
+5. Pin QueueTTS from the Chrome toolbar.
 
 ## Use the toolbar popup
 
-- Click the QueueTTS toolbar icon.
-- Use Add selected text after selecting text on a webpage.
-- Use Add this page to capture readable text from the active tab.
-- Paste short text directly into Quick paste.
-- Use the mini player controls for immediate playback.
-- Open queue to move into the side panel/full queue experience.
+The popup is the fast surface.
+
+- It shows the current page title, domain, and selected text count when Chrome allows access.
+- If text is selected, the primary action becomes Add selected text.
+- If no selection is available, the primary action becomes Add this page.
+- Paste is collapsed by default and opens only when needed.
+- The mini player shows queue count, current source, elapsed time, remaining time, voice/rate, and up-next items.
+- Open queue launches the side panel or full queue page.
 
 ## Use context menus
 
-Right-click on a webpage to use:
+Right-click on any normal webpage:
 
-- Add selected text to QueueTTS.
-- Add current page to QueueTTS.
-- Open QueueTTS queue.
+- Add selected text to QueueTTS
+- Add current page to QueueTTS
+- Open QueueTTS queue
 
-Selected-text capture is the most reliable capture path because Chrome provides the selection directly to the extension after the user chooses the menu item.
+Selected-text capture uses Chrome's context menu selection payload. Current-page capture runs only after a user action through `activeTab` and `scripting`.
 
-## Use the side panel or full queue
+## Use the side panel queue
 
-The side panel is the daily-use interface. It includes now playing, capture previews, queue search and filters, item editing, reorder controls, focus mode, trust copy, and settings access. If Chrome cannot open a side panel in a context, QueueTTS opens the full queue page in a tab.
+The side panel is the full product surface.
 
-## Settings and storage
+- Capture current page, selected text, or pasted text.
+- Review and edit extracted text before adding it.
+- Play, pause, skip segments, move between items, and use a sleep timer.
+- Search and filter the queue.
+- Edit, duplicate, delete, reorder, retry, or requeue items.
+- Use focus mode for long listening sessions.
+- Use `Ctrl/⌘ K` for the command menu.
 
-Open Settings from the side panel to configure voice and playback behavior, pronunciation replacements, import/export, privacy copy, and keyboard shortcuts.
+## Settings and privacy
 
-QueueTTS stores queue items, source metadata, settings, pronunciation replacements, and listening counters in `chrome.storage.local`. The extension has no account system, no backend, no analytics, and no tracking code. Text-to-speech is handled by Chrome through the `chrome.tts` extension API.
+The options page controls voice, language hint, speech rate, pitch, volume, skip interval, heading behavior, sleep defaults, theme, reduced motion, auto-play, pronunciation replacements, import/export, storage clearing, and shortcut reference.
 
-## Browser limitations
+QueueTTS stores only local extension data in `chrome.storage.local`:
 
-QueueTTS can only capture pages where Chrome allows user-triggered extension scripting. Chrome blocks capture on restricted pages such as `chrome://` URLs, the Chrome Web Store, some internal pages, and pages where browser policy prevents script injection. When extraction fails, use selected-text capture or paste manually.
+- queue items
+- source metadata
+- settings
+- pronunciation dictionary
+- daily counters
+- playback position
 
-Article extraction is practical, not perfect. QueueTTS removes common page chrome such as navigation, ads, forms, scripts, cookie prompts, and sidebars, then extracts headings, paragraphs, list items, blockquotes, captions, and table text. Review long or unusual captures before adding.
+There is no backend, account, analytics, tracking pixel, or remote script. Speech playback uses Chrome text-to-speech. Some Chrome voices may be remote depending on the voice installed in the browser; QueueTTS exposes the voice list Chrome provides.
 
-## Keyboard shortcuts
+## Permissions
 
-- Space: play or pause.
-- J / K: next or previous segment.
-- N / P: next or previous item.
-- `/`: search queue.
-- F: focus mode.
-- Ctrl/Command K: command menu.
-- Ctrl/Command Enter: add pasted text in popup.
+- `storage`: local queue, settings, counters, dictionary, and playback state.
+- `contextMenus`: right-click capture actions.
+- `activeTab`: user-triggered capture from the active page only.
+- `scripting`: injects the local content script after user action.
+- `sidePanel`: opens the queue beside the current page.
+- `tts`: browser text-to-speech playback.
+- `alarms`: sleep timer.
+
+No host permissions and no `<all_urls>` permission are used.

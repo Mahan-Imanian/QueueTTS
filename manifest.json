@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "QueueTTS",
   "short_name": "QueueTTS",
-  "version": "2.0.0",
-  "description": "Capture readable text from the browser, queue it, and listen later with local text-to-speech.",
+  "version": "2.1.0",
+  "description": "A compact local-first Chrome extension for capturing web text, queueing it, and listening later with browser text-to-speech.",
   "minimum_chrome_version": "116",
   "permissions": [
     "storage",
