@@ -28,7 +28,7 @@ export const defaultPlayback = () => ({
 });
 
 export const defaultState = () => ({
-  version: 2,
+  version: 3,
   queue: [],
   settings: defaultSettings(),
   playback: defaultPlayback(),
@@ -146,14 +146,15 @@ export const normalizeItem = (raw) => {
     wordCount: Number(raw?.wordCount) || wordCount(text),
     estimateSeconds: Number(raw?.estimateSeconds) || estimateSeconds(text, rate),
     headingMode: ["cue", "pause", "off"].includes(raw?.headingMode) ? raw.headingMode : "cue",
-    lang: typeof raw?.lang === "string" ? raw.lang : ""
+    lang: typeof raw?.lang === "string" ? raw.lang : "",
+    quality: ["good", "uncertain", "short", "failed", "manual"].includes(raw?.quality) ? raw.quality : (state === "failed" ? "failed" : "good")
   };
   if (item.state !== "failed" && item.text.length < MIN_TEXT_LENGTH) item.state = "failed";
   if (item.state === "failed" && !item.error) item.error = "Capture did not contain enough readable text.";
   return item;
 };
 
-export const createQueueItem = ({ title, text, sourceType = "paste", sourceTitle = "", sourceUrl = "", headingMode = "cue", lang = "", state = "queued", error = "" }, settings = defaultSettings()) => normalizeItem({
+export const createQueueItem = ({ title, text, sourceType = "paste", sourceTitle = "", sourceUrl = "", headingMode = "cue", lang = "", state = "queued", error = "", quality = "good" }, settings = defaultSettings()) => normalizeItem({
   id: uid("item"),
   title: title || deriveTitle(text, sourceTitle || "Untitled capture"),
   text,
@@ -164,6 +165,7 @@ export const createQueueItem = ({ title, text, sourceType = "paste", sourceTitle
   lang: lang || settings.lang || "",
   state,
   error,
+  quality,
   rate: settings.rate,
   capturedAt: Date.now(),
   updatedAt: Date.now()
@@ -186,7 +188,7 @@ export const normalizeState = (raw) => {
   playback.segmentIndex = Math.max(0, Number(playback.segmentIndex) || 0);
   playback.status = ["idle", "playing", "paused", "loading", "error"].includes(playback.status) ? playback.status : "idle";
   const stats = raw.stats && typeof raw.stats === "object" ? raw.stats : base.stats;
-  return { version: 2, queue, settings, playback, stats: { days: stats.days && typeof stats.days === "object" ? stats.days : {} } };
+  return { version: 3, queue, settings, playback, stats: { days: stats.days && typeof stats.days === "object" ? stats.days : {} } };
 };
 
 export const readState = async () => {

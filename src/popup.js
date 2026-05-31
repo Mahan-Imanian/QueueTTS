@@ -70,6 +70,7 @@ const message = (payload) => chrome.runtime.sendMessage(payload);
 const escapeHtml = (value) => String(value || "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
 const isCapturableUrl = (url) => /^https?:\/\//i.test(String(url || ""));
 const sourceLabel = (item) => item?.sourceUrl ? hostFromUrl(item.sourceUrl) : item?.sourceType === "paste" ? "Pasted text" : item?.sourceTitle || "Local text";
+const sourceInitial = (item) => (sourceLabel(item).trim()[0] || "Q").toUpperCase();
 const statusLabel = (status) => status === "playing" ? "Playing" : status === "paused" ? "Paused" : status === "loading" ? "Loading" : status === "error" ? "Error" : "Idle";
 
 const toast = (text, mode = "") => {
@@ -116,12 +117,13 @@ const renderContext = () => {
   els.primaryCapture.textContent = primaryMode === "selection" ? "Add selected text" : primaryMode === "page" ? "Add this page" : "Paste text";
   els.captureSelection.disabled = words < 3;
   els.captureSelection.textContent = words >= 3 ? `Selection · ${words}` : "No selection";
-  els.emptyCopy.textContent = capturable ? "Capture this page, selected text, or paste manually. Everything stays local in Chrome." : "This page blocks capture. Paste text manually or right-click selected text on a regular webpage.";
+  els.emptyTitle.textContent = primaryMode === "selection" ? "Selection ready." : primaryMode === "page" ? "Capture this page." : "Paste text to queue.";
+  els.emptyCopy.textContent = capturable ? "Preview readable text before queueing, or use paste for precise control." : "Chrome blocks this surface. Paste manually or use a normal webpage.";
 };
 
 const renderPlayer = (item, progress) => {
   const hasItem = Boolean(item);
-  els.emptyCommand.classList.toggle("hidden", hasItem);
+  els.emptyCommand.classList.remove("hidden");
   els.playerPanel.classList.toggle("hidden", !hasItem);
   if (!hasItem) return;
 
@@ -149,7 +151,7 @@ const renderQueuePreview = (item) => {
   els.queuePreviewList.innerHTML = rows.map((row) => {
     const active = activeIds.has(row.id);
     const meta = `${sourceLabel(row)} · ${row.wordCount} words · ${fmtTime(row.estimateSeconds)}`;
-    return `<div class="queue-preview-row ${active ? "active" : ""}"><div><strong>${escapeHtml(row.title)}</strong><span>${escapeHtml(meta)}</span></div><button class="button secondary small" data-play-id="${escapeHtml(row.id)}" type="button">${active ? "Open" : "Play"}</button></div>`;
+    return `<div class="queue-preview-row ${active ? "active" : ""}"><span class="source-glyph" aria-hidden="true">${escapeHtml(sourceInitial(row))}</span><div><strong>${escapeHtml(row.title)}</strong><span>${escapeHtml(meta)}</span></div><button class="button secondary small" data-play-id="${escapeHtml(row.id)}" type="button">${active ? "Open" : "Play"}</button></div>`;
   }).join("");
   $$('[data-play-id]').forEach((button) => button.addEventListener("click", () => control("QTTS_PLAY", { itemId: button.dataset.playId, segmentIndex: 0 })));
 };
@@ -229,7 +231,7 @@ const addPaste = async () => {
     notice("Paste more text before adding.", "error");
     return;
   }
-  const item = createQueueItem({ title: "Pasted text", text, sourceType: "paste", sourceTitle: "Popup paste" }, state.settings);
+  const item = createQueueItem({ title: "Pasted text", text, sourceType: "paste", sourceTitle: "Popup paste", quality: "manual" }, state.settings);
   await addItemToState(item, { activate: !state.playback.itemId });
   els.pasteInput.value = "";
   els.pasteDrawer.classList.add("hidden");

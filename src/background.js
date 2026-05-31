@@ -88,7 +88,8 @@ const addCapture = async (capture, settingsOverride = {}) => {
     headingMode: settings.headingMode,
     lang: capture.lang || settings.lang || "",
     state: capture.failed ? "failed" : "queued",
-    error: capture.error || ""
+    error: capture.error || "",
+    quality: capture.quality || (capture.failed ? "failed" : "good")
   }, settings);
   await addItemToState(item, { activate: true });
   await setBadge();
