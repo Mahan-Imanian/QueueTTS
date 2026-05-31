@@ -2,88 +2,111 @@
 
 ## Summary
 
-This version applies the product-quality critique as a correction spec. The extension no longer behaves like a narrow dark web app with stacked cards. The popup is now a compact browser-native queue command center.
+This build applies the latest product critique: QueueTTS must stop feeling like a dark card-stack web app and behave like a compact browser-native speech queue command system.
 
-The main behavioral rule is simple:
+The implementation focuses on:
 
-- Empty queue: capture is primary.
-- Active queue: playback is primary.
-- Unsupported page: paste is primary.
-- Queue work: side panel is primary.
+- Popup-first Chrome extension ergonomics
+- Clear capture → review → queue → listen workflow
+- Fewer containers and stronger hierarchy
+- Queue rows instead of generic cards
+- Failed extraction repair paths
+- Source metadata and extraction quality
+- Local-first privacy clarity
 
-## What changed
+## Architecture
 
-- Removed the over-carded popup structure.
-- Removed full-width Back and Next media controls.
-- Removed repeated empty-state messages and meaningless zero-time playback metrics.
-- Collapsed manual paste until requested.
-- Made the primary capture action change based on browser context.
-- Added command palette behavior in the popup.
-- Added compact queue rows in the popup.
-- Added compact popup speed controls.
-- Reduced radius, shadow, border drama, and fake depth.
-- Shortened popup copy.
-- Preserved all core extension systems from the previous MV3 build.
+- Manifest V3 Chrome extension
+- `manifest.json` defines popup, side panel, options page, service worker, icons, and permissions
+- `src/background.js` coordinates capture, context menus, queue playback, sleep timer, and Chrome TTS
+- `src/content.js` extracts selected text, page context, and readable page text when invoked
+- `src/shared.js` owns storage normalization, item creation, text cleanup, segmentation, estimates, and import/export parsing
+- `src/popup.js` renders the compact toolbar remote
+- `src/sidepanel.js` renders the full queue and capture surface
+- `src/options.js` renders voice, behavior, storage, privacy, and shortcut settings
 
-## Chrome extension architecture
+## Permissions
 
-- `manifest.json`: Manifest V3 metadata, permissions, popup, side panel, options page, icons, and service worker.
-- `src/background.js`: context menus, page capture coordination, queue writes, badge updates, sleep alarm, and Chrome TTS playback.
-- `src/content.js`: selected-text capture, readable page extraction, and current-page context detection.
-- `pages/popup.html`, `src/popup.js`, `styles/popup.css`: compact toolbar command surface.
-- `pages/sidepanel.html`, `src/sidepanel.js`, `styles/sidepanel.css`: full queue management surface.
-- `pages/options.html`, `src/options.js`, `styles/options.css`: voice, behavior, storage, privacy, and keyboard settings.
-- `src/shared.js`: storage abstraction, queue normalization, cleanup, segmentation, progress, import/export helpers.
+- `storage`: stores queue, settings, dictionary, counters, and playback state locally
+- `contextMenus`: adds right-click capture and queue actions
+- `activeTab`: allows capture only after the user invokes the extension
+- `scripting`: injects the local content script into the active tab for capture
+- `sidePanel`: opens the full queue beside the browser page when available
+- `tts`: speaks queued text through Chrome text-to-speech
+- `alarms`: powers sleep timer behavior locally
 
-## Permissions used
-
-- `storage`: stores queue, settings, counters, and dictionary locally.
-- `contextMenus`: adds right-click capture and queue actions.
-- `activeTab`: captures only the active tab after user interaction.
-- `scripting`: injects the local content script into the active tab for capture.
-- `sidePanel`: opens the full queue manager beside the current page.
-- `tts`: plays queued text through Chrome text-to-speech.
-- `alarms`: supports sleep timer behavior.
-
-The extension does not request `<all_urls>` and does not declare host permissions.
+No `<all_urls>` host permission is requested. No remote JavaScript is used. No backend is required.
 
 ## Storage approach
 
-QueueTTS uses `chrome.storage.local` under the key `queuetts:v2`.
+QueueTTS uses `chrome.storage.local` through a shared state abstraction. The state contains:
 
-Stored data includes queue items, local metadata, playback position, settings, pronunciation dictionary, and daily counters.
+- queue items
+- item source metadata
+- item extraction quality
+- playback state
+- voice and behavior settings
+- pronunciation dictionary
+- daily counters
 
-No data leaves the browser.
+Exports include a schema version and normalized state. Imports validate through the same normalizer before replacing local state.
 
 ## Capture behavior
 
-- Selected text is preferred when available.
-- Page capture extracts visible readable text from the current tab.
-- Browser-restricted pages fall back to paste.
-- Failed or short captures can be repaired from the side panel preview/edit flow.
-- Cleanup removes common page chrome and bad accessibility fragments such as avatar, icon, logo, and navigation labels.
+Capture is user-triggered.
+
+- Selected text is preferred when enough selected words are detected.
+- Page capture extracts from article/main/content candidates, removes noisy elements, and filters obvious navigation/cookie/share text.
+- Failed or uncertain extraction is preserved as a repairable queue item or preview state.
+- Unsupported Chrome/internal pages fall back to paste.
 
 ## Playback behavior
 
 Playback uses `chrome.tts` from the background service worker.
 
-The popup, side panel, and options page read the same local state. The popup shows playback controls only when there is a playable item.
+The UI supports:
 
-## Known browser limitations
+- play/pause
+- previous/next item
+- previous/next segment
+- skip controls in the full queue
+- voice/rate controls
+- sleep timer
+- focus mode
 
-Chrome blocks capture on internal pages, extension pages, the Chrome Web Store, and other restricted surfaces.
+Browser TTS behavior depends on installed Chrome voices and platform support.
 
-Voice availability and background speech continuity depend on Chrome and the operating system.
+## What changed in this pass
+
+- Rebuilt popup density and layout to avoid horizontal scroll.
+- Removed empty playback controls when the queue is empty.
+- Made the current tab capture action dominant.
+- Added a compact command palette in the popup.
+- Reworked the full queue into a two-zone cockpit: playback/queue plus capture/trust rail.
+- Replaced metric cards with a compact status strip.
+- Reworked queue items into dense source-aware rows.
+- Added repair hierarchy for failed captures.
+- Preserved extraction quality metadata.
+- Tightened semantic design tokens and state colors.
+- Added controlled atmospheric depth without decorative glassmorphism.
 
 ## Files changed
 
-- `pages/popup.html`
-- `styles/popup.css`
-- `src/popup.js`
-- `styles/base.css`
 - `manifest.json`
 - `package.json`
-- `package-lock.json`
+- `src/background.js`
+- `src/content.js`
+- `src/shared.js`
+- `src/popup.js`
+- `src/sidepanel.js`
+- `src/options.js`
+- `pages/popup.html`
+- `pages/sidepanel.html`
+- `pages/options.html`
+- `styles/base.css`
+- `styles/popup.css`
+- `styles/sidepanel.css`
+- `styles/options.css`
 - `README.md`
 - `CHANGELOG.md`
 - `REBUILD_NOTES.md`
@@ -92,33 +115,45 @@ Voice availability and background speech continuity depend on Chrome and the ope
 
 - `npm run check`
 - `npm run build`
-- JavaScript syntax validation through the project check script
-- Manifest validation through the project check script
-- Required-file validation through the project check script
-- Extension asset reference validation through the project check script
-- Final ZIP structure validation
+- JavaScript syntax validation through the checker
+- Required file and asset validation
+- Manifest V3 validation through the checker
+- Chromium headless unpacked-extension smoke launch
+- ZIP integrity verification
 
 ## Manual QA checklist
 
-- Load unpacked extension in Chrome.
-- Open toolbar popup with an empty queue.
-- Confirm capture is primary and playback controls are hidden.
-- Open a normal webpage and add the current page.
-- Select text on a webpage and add the selection.
-- Right-click selected text and add it through the context menu.
-- Open paste with `P` and add pasted text.
-- Open command palette with `Ctrl/Command + K`.
-- Play/pause with Space.
-- Move previous/next segment.
-- Move previous/next item.
-- Open side panel queue.
-- Search queue.
-- Edit, duplicate, delete, reorder, and retry items.
-- Change voice and speech rate in options.
-- Export and import backup JSON.
-- Clear completed items.
-- Reset all data.
-- Reload Chrome and confirm persistence.
-- Test an unsupported tab and confirm paste fallback.
-- Navigate popup with keyboard and confirm visible focus.
-- Enable reduced motion and confirm motion is restrained.
+- Load unpacked extension in Chrome
+- Open popup
+- Verify no horizontal popup overflow
+- Verify empty popup prioritizes capture
+- Capture current page
+- Capture selected text through context menu
+- Paste text in popup
+- Open full queue
+- Play/pause
+- Move previous/next segment
+- Move previous/next item
+- Search queue
+- Filter queue
+- Edit queue item
+- Repair failed capture
+- Retry failed extraction
+- Duplicate queue item
+- Reorder queue item
+- Delete queue item
+- Open focus mode
+- Change voice and rate
+- Export data
+- Import data
+- Clear data safely
+- Reload extension and confirm queue persistence
+- Test Chrome internal page fallback
+- Test reduced motion setting
+- Test keyboard focus rings and Escape behavior
+
+## Remaining limitations
+
+- Page extraction is practical, not perfect. Complex sites may need selected-text capture or manual paste.
+- Chrome TTS voice availability depends on the browser profile and operating system.
+- Background audio behavior follows Chrome extension and TTS lifecycle constraints.
