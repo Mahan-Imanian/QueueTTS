@@ -68,11 +68,22 @@ export const compactWhitespace = (value) => String(value || "")
   .replace(/[ \t]+\n/g, "\n")
   .trim();
 
-export const cleanText = (value) => compactWhitespace(String(value || "")
+export const cleanupLines = (value) => String(value || "")
+  .split("\n")
+  .map((line) => line.trim())
+  .filter((line) => {
+    if (!line) return true;
+    if (/^(heading\.?\s*)?(owner|author|user|profile)?\s*(avatar|logo|icon|image|photo)$/i.test(line)) return false;
+    if (/^(share|menu|close|open|search|previous|next|subscribe|sign in|sign up|advertisement|sponsored)$/i.test(line)) return false;
+    return true;
+  })
+  .join("\n");
+
+export const cleanText = (value) => compactWhitespace(cleanupLines(String(value || "")
   .replace(/\r/g, "")
   .replace(/[“”]/g, '"')
   .replace(/[‘’]/g, "'")
-  .replace(/\s+([,.!?;:])/g, "$1"));
+  .replace(/\s+([,.!?;:])/g, "$1")));
 
 export const parseDictionary = (raw) => String(raw || "")
   .split("\n")

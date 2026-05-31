@@ -105,6 +105,19 @@
     };
   };
 
+  const pageContext = () => {
+    const selection = clean(String(window.getSelection()?.toString() || ""));
+    return {
+      ok: true,
+      context: {
+        title: document.title || location.hostname || "Current page",
+        url: location.href,
+        selectionWords: words(selection),
+        selectionPreview: selection.slice(0, 180)
+      }
+    };
+  };
+
   const capturePage = () => {
     try {
       const candidate = bestCandidate();
@@ -155,6 +168,7 @@
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message?.type === "QTTS_CAPTURE_SELECTION") sendResponse(captureSelection());
     if (message?.type === "QTTS_CAPTURE_PAGE") sendResponse(capturePage());
+    if (message?.type === "QTTS_CAPTURE_CONTEXT") sendResponse(pageContext());
     return false;
   });
 })();

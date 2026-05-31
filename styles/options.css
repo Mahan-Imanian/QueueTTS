@@ -6,10 +6,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px clamp(16px, 4vw, 36px);
+  padding: 14px clamp(14px, 4vw, 32px);
   border-bottom: 1px solid var(--line);
-  background: color-mix(in oklab, var(--bg) 86%, transparent);
-  backdrop-filter: blur(18px);
+  background: color-mix(in oklab, var(--bg) 92%, transparent);
+  backdrop-filter: blur(16px);
 }
 
 .options-shell {
@@ -17,40 +17,40 @@
   z-index: 1;
   width: min(1120px, 100%);
   margin: 0 auto;
-  padding: clamp(16px, 4vw, 36px);
+  padding: clamp(14px, 4vw, 32px);
 }
 
 .options-hero {
-  padding: clamp(20px, 5vw, 42px);
-  margin-bottom: 16px;
+  padding: clamp(18px, 4vw, 34px);
+  margin-bottom: 14px;
 }
 
 .options-hero h1 {
   max-width: 760px;
   margin: 8px 0 12px;
-  font-size: clamp(32px, 6vw, 58px);
-  line-height: 0.96;
-  letter-spacing: -0.07em;
+  font-size: clamp(28px, 5vw, 48px);
+  line-height: 1;
+  letter-spacing: -0.055em;
 }
 
 .options-hero p {
   max-width: 720px;
   margin: 0;
   color: var(--muted);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.55;
 }
 
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .settings-card {
   display: grid;
-  gap: 16px;
-  padding: 18px;
+  gap: 14px;
+  padding: 16px;
 }
 
 .settings-card.wide {
@@ -67,14 +67,14 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 42px;
+  min-height: 40px;
   padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--surface-inset);
   font-size: 13px;
-  font-weight: 720;
+  font-weight: 690;
 }
 
 input[type="range"] {
@@ -118,9 +118,9 @@ input[type="range"] {
   align-items: center;
   padding: 0 9px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   color: var(--text);
-  background: rgba(255, 255, 255, 0.055);
+  background: var(--surface-inset);
   font-family: var(--mono);
   font-size: 12px;
 }

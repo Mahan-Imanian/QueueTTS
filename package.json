@@ -1,6 +1,6 @@
 {
   "name": "queuetts-extension",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "QueueTTS Chrome MV3 extension for local text-to-speech queues.",
