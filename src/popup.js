@@ -1,5 +1,6 @@
 import {
   STORAGE_KEY,
+  addItemToState,
   createQueueItem,
   currentItem,
   fmtTime,
@@ -8,19 +9,27 @@ import {
   queueSummary,
   readState,
   todayKey,
-  wordCount,
-  addItemToState
+  updateState,
+  wordCount
 } from "./shared.js";
 
 const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => [...document.querySelectorAll(selector)];
+
 const els = {
-  queuePill: $("#queuePill"),
+  openQueueFromBrand: $("#openQueueFromBrand"),
+  openQueue: $("#openQueue"),
   openOptions: $("#openOptions"),
+  contextBar: $("#contextBar"),
   contextTitle: $("#contextTitle"),
   contextMeta: $("#contextMeta"),
-  statusBadge: $("#statusBadge"),
+  emptyCommand: $("#emptyCommand"),
+  emptyTitle: $("#emptyTitle"),
+  emptyCopy: $("#emptyCopy"),
+  playerPanel: $("#playerPanel"),
   nowTitle: $("#nowTitle"),
   nowMeta: $("#nowMeta"),
+  statusBadge: $("#statusBadge"),
   progress: $("#progress"),
   progressFill: $("#progress span"),
   elapsedTime: $("#elapsedTime"),
@@ -31,39 +40,37 @@ const els = {
   nextItem: $("#nextItem"),
   prevSegment: $("#prevSegment"),
   nextSegment: $("#nextSegment"),
-  voiceChip: $("#voiceChip"),
   primaryCapture: $("#primaryCapture"),
   captureSelection: $("#captureSelection"),
-  capturePage: $("#capturePage"),
   togglePaste: $("#togglePaste"),
   pasteDrawer: $("#pasteDrawer"),
   pasteInput: $("#pasteInput"),
   pasteStats: $("#pasteStats"),
   addPaste: $("#addPaste"),
   clearPaste: $("#clearPaste"),
-  openQueue: $("#openQueue"),
-  captureHint: $("#captureHint"),
-  selectionState: $("#selectionState"),
+  queuePreview: $("#queuePreview"),
   queuePreviewList: $("#queuePreviewList"),
   timeCount: $("#timeCount"),
+  voiceChip: $("#voiceChip"),
   statusNotice: $("#statusNotice"),
+  commandOpen: $("#commandOpen"),
+  commandModal: $("#commandModal"),
+  commandInput: $("#commandInput"),
+  commandList: $("#commandList"),
   toasts: $("#toasts")
 };
 
 let state = await readState();
 let pageContext = null;
+let contextError = "";
 let primaryMode = "page";
+let commandIndex = 0;
 
 const message = (payload) => chrome.runtime.sendMessage(payload);
-
 const escapeHtml = (value) => String(value || "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
-
-const sourceLabel = (item) => {
-  if (!item) return "Local";
-  if (item.sourceUrl) return hostFromUrl(item.sourceUrl);
-  if (item.sourceType === "paste") return "Pasted text";
-  return item.sourceType || "Local";
-};
+const isCapturableUrl = (url) => /^https?:\/\//i.test(String(url || ""));
+const sourceLabel = (item) => item?.sourceUrl ? hostFromUrl(item.sourceUrl) : item?.sourceType === "paste" ? "Pasted text" : item?.sourceTitle || "Local text";
+const statusLabel = (status) => status === "playing" ? "Playing" : status === "paused" ? "Paused" : status === "loading" ? "Loading" : status === "error" ? "Error" : "Idle";
 
 const toast = (text, mode = "") => {
   const node = document.createElement("div");
@@ -75,47 +82,85 @@ const toast = (text, mode = "") => {
 
 const notice = (text, mode = "") => {
   els.statusNotice.textContent = text;
-  els.statusNotice.className = `notice ${mode}`.trim();
+  els.statusNotice.className = `notice-line ${mode}`.trim();
 };
 
 const setBusy = (button, busy) => {
   button.disabled = busy;
   button.dataset.label ||= button.textContent;
-  button.textContent = busy ? "Working..." : button.dataset.label;
+  button.textContent = busy ? "Working…" : button.dataset.label;
 };
-
-const statusLabel = (status) => status === "playing" ? "Playing" : status === "paused" ? "Paused" : status === "loading" ? "Loading" : status === "error" ? "Error" : "Idle";
 
 const loadContext = async () => {
   try {
     const response = await message({ type: "QTTS_CONTEXT_ACTIVE" });
-    pageContext = response?.ok ? response.context : null;
-  } catch {
+    pageContext = response?.context || null;
+    contextError = response?.ok ? "" : response?.error || "Page context unavailable.";
+  } catch (error) {
     pageContext = null;
+    contextError = error?.message || "Page context unavailable.";
   }
 };
 
 const renderContext = () => {
+  const url = pageContext?.url || "";
   const words = Number(pageContext?.selectionWords || 0);
+  const capturable = isCapturableUrl(url);
   const title = pageContext?.title || "Current tab unavailable";
-  const host = pageContext?.url ? hostFromUrl(pageContext.url) : "No page access";
-  primaryMode = words >= 3 ? "selection" : "page";
-  els.contextTitle.textContent = title;
-  els.contextMeta.textContent = pageContext?.url ? `${host} · ${words ? `${words} selected words` : "no selected text"}` : "Use paste or open a regular webpage.";
-  els.selectionState.textContent = words ? `${words} selected` : "No selection";
-  els.selectionState.classList.toggle("success", words > 0);
-  els.primaryCapture.textContent = primaryMode === "selection" ? "Add selected text" : "Add this page";
-  els.captureHint.textContent = primaryMode === "selection" ? "Selection detected. Capture only the highlighted text." : "No selection detected. Capture the readable page or paste manually.";
+  const host = capturable ? hostFromUrl(url) : "Paste is available";
+  primaryMode = words >= 3 ? "selection" : capturable ? "page" : "paste";
+
+  els.contextBar.className = `context-bar ${!capturable ? "warning" : words >= 3 ? "success" : ""}`.trim();
+  els.contextTitle.textContent = capturable ? title : "This tab can’t be captured";
+  els.contextMeta.textContent = capturable ? `${host} · ${words ? `${words} selected words` : "no selection"}` : `${contextError || "Chrome pages and extension pages block capture."} Use paste instead.`;
+  els.primaryCapture.textContent = primaryMode === "selection" ? "Add selected text" : primaryMode === "page" ? "Add this page" : "Paste text";
   els.captureSelection.disabled = words < 3;
+  els.captureSelection.textContent = words >= 3 ? `Selection · ${words}` : "No selection";
+  els.emptyCopy.textContent = capturable ? "Capture this page, selected text, or paste manually. Everything stays local in Chrome." : "This page blocks capture. Paste text manually or right-click selected text on a regular webpage.";
+};
+
+const renderPlayer = (item, progress) => {
+  const hasItem = Boolean(item);
+  els.emptyCommand.classList.toggle("hidden", hasItem);
+  els.playerPanel.classList.toggle("hidden", !hasItem);
+  if (!hasItem) return;
+
+  els.statusBadge.className = `status-badge ${state.playback.status}`;
+  els.statusBadge.textContent = statusLabel(state.playback.status);
+  els.nowTitle.textContent = item.title || "Untitled capture";
+  els.nowMeta.textContent = `${sourceLabel(item)} · ${item.wordCount} words · ${fmtTime(progress.total || item.estimateSeconds)}`;
+  els.spokenText.textContent = progress.segment?.text || item.text?.slice(0, 220) || "No active segment.";
+  els.progressFill.style.width = `${progress.percent}%`;
+  els.progress.setAttribute("aria-valuenow", String(progress.percent));
+  els.elapsedTime.textContent = fmtTime(progress.elapsed || 0);
+  els.remainingTime.textContent = `${fmtTime(progress.remaining || progress.total || 0)} left`;
+  els.playPause.textContent = state.playback.status === "playing" ? "Ⅱ" : "▶";
+  els.playPause.setAttribute("aria-label", state.playback.status === "playing" ? "Pause" : "Play");
 };
 
 const renderQueuePreview = (item) => {
-  const rows = state.queue.filter((candidate) => candidate.id !== item?.id && candidate.state !== "completed").slice(0, 3);
+  const activeIds = new Set(item ? [item.id] : []);
+  const rows = state.queue.filter((candidate) => candidate.state !== "completed").slice(0, 4);
+  els.queuePreview.classList.toggle("hidden", rows.length === 0);
   if (!rows.length) {
-    els.queuePreviewList.innerHTML = `<p class="queue-preview-empty">No upcoming items. Capture text now or use the context menu later.</p>`;
+    els.queuePreviewList.innerHTML = "";
     return;
   }
-  els.queuePreviewList.innerHTML = rows.map((row) => `<div class="queue-preview-row"><div><strong>${escapeHtml(row.title)}</strong><span>${escapeHtml(sourceLabel(row))} · ${row.wordCount} words</span></div><span>${fmtTime(row.estimateSeconds)}</span></div>`).join("");
+  els.queuePreviewList.innerHTML = rows.map((row) => {
+    const active = activeIds.has(row.id);
+    const meta = `${sourceLabel(row)} · ${row.wordCount} words · ${fmtTime(row.estimateSeconds)}`;
+    return `<div class="queue-preview-row ${active ? "active" : ""}"><div><strong>${escapeHtml(row.title)}</strong><span>${escapeHtml(meta)}</span></div><button class="button secondary small" data-play-id="${escapeHtml(row.id)}" type="button">${active ? "Open" : "Play"}</button></div>`;
+  }).join("");
+  $$('[data-play-id]').forEach((button) => button.addEventListener("click", () => control("QTTS_PLAY", { itemId: button.dataset.playId, segmentIndex: 0 })));
+};
+
+const renderRate = () => {
+  const rate = Number(state.settings.rate || 1);
+  els.voiceChip.textContent = `${state.settings.voiceName || "Default voice"} · ${rate.toFixed(2).replace(/\.00$/, "")}×`;
+  $$(".rate-chip").forEach((button) => {
+    const value = Number(button.dataset.rate);
+    button.classList.toggle("active", Math.abs(value - rate) < 0.01);
+  });
 };
 
 const render = async () => {
@@ -126,25 +171,18 @@ const render = async () => {
   const summary = queueSummary(state);
   const progress = progressFor(item, state.playback.segmentIndex, state.settings);
   const pending = state.queue.filter((row) => ["queued", "playing", "paused"].includes(row.state)).length;
-  els.queuePill.textContent = `${pending} queued`;
-  els.statusBadge.className = `status-badge ${state.playback.status}`;
-  els.statusBadge.textContent = statusLabel(state.playback.status);
-  els.nowTitle.textContent = item?.title || "Queue is empty";
-  els.nowMeta.textContent = item ? `${sourceLabel(item)} · ${item.wordCount} words · ${fmtTime(progress.total || item.estimateSeconds)}` : "Capture a page, selected text, or paste text to start listening.";
-  els.spokenText.textContent = progress.segment?.text || item?.text?.slice(0, 220) || "Your queue is stored locally in Chrome. No account or server is required.";
-  els.progressFill.style.width = `${progress.percent}%`;
-  els.progress.setAttribute("aria-valuenow", String(progress.percent));
-  els.elapsedTime.textContent = fmtTime(progress.elapsed || 0);
-  els.remainingTime.textContent = `${fmtTime(progress.remaining || progress.total || 0)} left`;
-  els.playPause.textContent = state.playback.status === "playing" ? "Ⅱ" : "▶";
-  els.playPause.setAttribute("aria-label", state.playback.status === "playing" ? "Pause" : "Play");
-  els.voiceChip.textContent = `${state.settings.voiceName || "Default voice"} · ${Number(state.settings.rate || 1).toFixed(2).replace(/\.00$/, "")}×`;
-  els.timeCount.textContent = `${fmtTime(summary.seconds)} total`;
+
+  els.openQueue.textContent = `${pending} queued`;
+  els.timeCount.textContent = fmtTime(summary.seconds);
+  renderContext();
+  renderPlayer(item, progress);
+  renderQueuePreview(item);
+  renderRate();
+
   const today = state.stats.days[todayKey()] || {};
   if (state.playback.status === "error" && state.playback.lastError) notice(state.playback.lastError, "error");
-  else if (today.itemsCaptured) notice(`${today.itemsCaptured} captures added today. Data stays local in Chrome.`, "success");
-  renderQueuePreview(item);
-  renderContext();
+  else if (today.itemsCaptured) notice(`${today.itemsCaptured} captured today · local-only queue`, "success");
+  else notice("Right-click selected text for the fastest capture.");
 };
 
 const addCapture = async (capture) => {
@@ -154,31 +192,41 @@ const addCapture = async (capture) => {
 };
 
 const capture = async (mode, button) => {
+  if (mode === "paste") {
+    openPaste();
+    return;
+  }
   setBusy(button, true);
   try {
     const response = await message({ type: "QTTS_CAPTURE_ACTIVE", mode });
     if (!response?.ok && !response?.capture) throw new Error(response?.error || "Capture failed.");
     const item = await addCapture(response.capture || { failed: true, text: "", sourceType: "failed", error: response.error });
     if (item.state === "failed") {
-      notice(item.error || "Capture needs manual repair. Open the queue to edit or paste manually.", "error");
+      notice(item.error || "Capture needs review. Open the queue to repair it.", "error");
       toast("Capture needs review", "error");
     } else {
-      notice(`${item.sourceType === "selection" ? "Selection" : "Page"} added to queue from ${sourceLabel(item)}.`, "success");
+      notice(`${item.sourceType === "selection" ? "Selection" : "Page"} added from ${sourceLabel(item)}.`, "success");
       toast("Added to queue");
     }
     await loadContext();
     await render();
   } catch (error) {
-    notice(error?.message || "Capture failed.", "error");
+    notice(error?.message || "Capture failed. Paste text manually.", "error");
+    openPaste();
   } finally {
     setBusy(button, false);
   }
 };
 
+const openPaste = () => {
+  els.pasteDrawer.classList.remove("hidden");
+  els.pasteInput.focus();
+};
+
 const addPaste = async () => {
   const text = els.pasteInput.value.trim();
   if (wordCount(text) < 3) {
-    notice("Paste more text before adding to the queue.", "error");
+    notice("Paste more text before adding.", "error");
     return;
   }
   const item = createQueueItem({ title: "Pasted text", text, sourceType: "paste", sourceTitle: "Popup paste" }, state.settings);
@@ -196,6 +244,50 @@ const control = async (type, payload = {}) => {
   await render();
 };
 
+const openQueueSurface = async () => {
+  await message({ type: "QTTS_OPEN_QUEUE" });
+  window.close();
+};
+
+const updateRate = async (rate) => {
+  await updateState((current) => ({ ...current, settings: { ...current.settings, rate: Number(rate) || 1 } }));
+  toast(`Speed ${Number(rate).toFixed(2).replace(/\.00$/, "")}×`);
+  await render();
+};
+
+const commands = () => [
+  { title: primaryMode === "selection" ? "Add selected text" : primaryMode === "page" ? "Add current page" : "Paste text", detail: "Best current action", run: () => capture(primaryMode, els.primaryCapture) },
+  { title: "Open paste box", detail: "Manual text capture", run: openPaste },
+  { title: "Play or pause", detail: "Space", run: () => control("QTTS_TOGGLE") },
+  { title: "Next segment", detail: "J", run: () => control("QTTS_NEXT_SEGMENT") },
+  { title: "Previous segment", detail: "K", run: () => control("QTTS_PREV_SEGMENT") },
+  { title: "Open full queue", detail: "Queue manager", run: openQueueSurface },
+  { title: "Open settings", detail: "Voice, speed, storage", run: () => chrome.runtime.openOptionsPage() }
+];
+
+const renderCommands = () => {
+  const query = els.commandInput.value.trim().toLowerCase();
+  const rows = commands().filter((command) => !query || `${command.title} ${command.detail}`.toLowerCase().includes(query));
+  commandIndex = Math.min(commandIndex, Math.max(0, rows.length - 1));
+  els.commandList.innerHTML = rows.map((command, index) => `<button class="command-row ${index === commandIndex ? "active" : ""}" data-command-index="${index}" type="button" role="option"><span>${escapeHtml(command.title)}</span><small>${escapeHtml(command.detail)}</small></button>`).join("");
+  $$('[data-command-index]').forEach((button) => button.addEventListener("click", () => runCommand(rows[Number(button.dataset.commandIndex)])));
+};
+
+const openCommand = () => {
+  commandIndex = 0;
+  els.commandInput.value = "";
+  els.commandModal.classList.remove("hidden");
+  renderCommands();
+  els.commandInput.focus();
+};
+
+const closeCommand = () => els.commandModal.classList.add("hidden");
+const runCommand = async (command) => {
+  if (!command) return;
+  closeCommand();
+  await command.run();
+};
+
 els.playPause.addEventListener("click", () => control("QTTS_TOGGLE"));
 els.prevItem.addEventListener("click", () => control("QTTS_PREV_ITEM"));
 els.nextItem.addEventListener("click", () => control("QTTS_NEXT_ITEM"));
@@ -203,37 +295,62 @@ els.prevSegment.addEventListener("click", () => control("QTTS_PREV_SEGMENT"));
 els.nextSegment.addEventListener("click", () => control("QTTS_NEXT_SEGMENT"));
 els.primaryCapture.addEventListener("click", () => capture(primaryMode, els.primaryCapture));
 els.captureSelection.addEventListener("click", () => capture("selection", els.captureSelection));
-els.capturePage.addEventListener("click", () => capture("page", els.capturePage));
-els.togglePaste.addEventListener("click", () => {
-  els.pasteDrawer.classList.toggle("hidden");
-  if (!els.pasteDrawer.classList.contains("hidden")) els.pasteInput.focus();
-});
+els.togglePaste.addEventListener("click", openPaste);
 els.addPaste.addEventListener("click", addPaste);
 els.clearPaste.addEventListener("click", () => {
   els.pasteInput.value = "";
   els.pasteStats.textContent = "0 words";
 });
-els.openQueue.addEventListener("click", async () => {
-  await message({ type: "QTTS_OPEN_QUEUE" });
-  window.close();
-});
+els.openQueue.addEventListener("click", openQueueSurface);
+els.openQueueFromBrand.addEventListener("click", openQueueSurface);
 els.openOptions.addEventListener("click", () => chrome.runtime.openOptionsPage());
+els.voiceChip.addEventListener("click", () => chrome.runtime.openOptionsPage());
+els.commandOpen.addEventListener("click", openCommand);
+els.commandModal.addEventListener("click", (event) => {
+  if (event.target === els.commandModal) closeCommand();
+});
+els.commandInput.addEventListener("input", () => {
+  commandIndex = 0;
+  renderCommands();
+});
+els.commandInput.addEventListener("keydown", (event) => {
+  const rows = commands().filter((command) => !els.commandInput.value.trim() || `${command.title} ${command.detail}`.toLowerCase().includes(els.commandInput.value.trim().toLowerCase()));
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    commandIndex = Math.min(rows.length - 1, commandIndex + 1);
+    renderCommands();
+  }
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    commandIndex = Math.max(0, commandIndex - 1);
+    renderCommands();
+  }
+  if (event.key === "Enter") {
+    event.preventDefault();
+    runCommand(rows[commandIndex]);
+  }
+  if (event.key === "Escape") closeCommand();
+});
 els.pasteInput.addEventListener("input", () => {
   const words = wordCount(els.pasteInput.value);
   els.pasteStats.textContent = `${words} ${words === 1 ? "word" : "words"}`;
 });
+$$(".rate-chip").forEach((button) => button.addEventListener("click", () => updateRate(button.dataset.rate)));
 
 document.addEventListener("keydown", (event) => {
   const editable = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName || "");
+  if (event.key === "Escape" && !els.commandModal.classList.contains("hidden")) closeCommand();
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "enter") addPaste();
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
     event.preventDefault();
-    els.openQueue.click();
+    openCommand();
   }
   if (event.key === " " && !editable) {
     event.preventDefault();
     control("QTTS_TOGGLE");
   }
+  if (!editable && event.key.toLowerCase() === "p") openPaste();
+  if (!editable && event.key.toLowerCase() === "q") openQueueSurface();
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {

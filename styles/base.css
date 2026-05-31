@@ -2,17 +2,17 @@
   color-scheme: dark;
   --bg: #090a0d;
   --bg-elevated: #0d0f14;
-  --surface-1: #11141a;
-  --surface-2: #151922;
-  --surface-3: #1a202a;
+  --surface-1: #101218;
+  --surface-2: #141821;
+  --surface-3: #1a1f28;
   --surface-inset: #0c0e13;
   --text: #f2f5f8;
   --muted: #a5afbd;
   --faint: #778292;
   --line: rgba(255, 255, 255, 0.095);
   --line-strong: rgba(255, 255, 255, 0.16);
-  --accent: #44d7b6;
-  --accent-strong: #63ead0;
+  --accent: #35c7a8;
+  --accent-strong: #54d9bd;
   --accent-muted: rgba(68, 215, 182, 0.12);
   --danger: #ff7a90;
   --warning: #f0bc56;
@@ -22,13 +22,13 @@
   --paused: #f0bc56;
   --completed: #8c96a6;
   --failed: #ff7a90;
-  --shadow-sm: 0 1px 1px rgba(0, 0, 0, 0.26), 0 8px 24px rgba(0, 0, 0, 0.18);
-  --shadow-md: 0 1px 1px rgba(0, 0, 0, 0.28), 0 20px 56px rgba(0, 0, 0, 0.26);
-  --radius-xs: 7px;
-  --radius-sm: 9px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --shadow-sm: 0 1px 1px rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 1px 1px rgba(0, 0, 0, 0.26), 0 12px 32px rgba(0, 0, 0, 0.22);
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -90,7 +90,7 @@ body {
   margin: 0;
   font-family: var(--font);
   color: var(--text);
-  background: linear-gradient(180deg, var(--bg-elevated), var(--bg));
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -207,7 +207,7 @@ svg {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface-1);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 .button,
