@@ -96,6 +96,8 @@ const statusLabel = (status) => status === "playing" ? "Playing" : status === "p
 const escapeHtml = (value) => String(value || "").replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
 
 const sourceLabel = (item) => item.sourceUrl ? hostFromUrl(item.sourceUrl) : item.sourceTitle || item.sourceType;
+const sourceInitial = (item) => (sourceLabel(item).trim()[0] || "Q").toUpperCase();
+const qualityLabel = (item) => item.state === "failed" ? "failed extraction" : item.quality === "uncertain" || item.quality === "short" ? "needs review" : "readable";
 
 const itemMatches = (item) => {
   const query = els.queueSearch.value.trim().toLowerCase();
@@ -109,7 +111,7 @@ const renderQueue = () => {
   const item = currentItem(state);
   const rows = state.queue.filter(itemMatches);
   if (!rows.length) {
-    const emptyText = state.queue.length ? "No items match the current search or filter." : "Your queue is empty. Capture the current page, selected text, or paste something worth listening to.";
+    const emptyText = state.queue.length ? "No items match the current search or filter." : "Capture the current page, selected text, or paste text to create the first item.";
     els.queueList.innerHTML = `<div class="empty-state"><strong>${state.queue.length ? "Nothing found" : "No listening material yet"}</strong><p>${emptyText}</p><button class="button primary" data-command="capture-page" type="button">Capture current page</button></div>`;
     return;
   }
@@ -117,26 +119,33 @@ const renderQueue = () => {
     const active = item?.id === row.id;
     const completed = row.state === "completed";
     const failed = row.state === "failed";
-    const meta = `${row.sourceType} · ${row.wordCount} words · ${fmtTime(row.estimateSeconds)} · ${new Date(row.capturedAt).toLocaleDateString()}`;
+    const quality = qualityLabel(row);
+    const meta = `${row.sourceType} · ${row.wordCount} words · ${fmtTime(row.estimateSeconds)} · captured ${new Date(row.capturedAt).toLocaleDateString()}`;
     const source = row.sourceUrl ? `<a class="source-link" href="${escapeHtml(row.sourceUrl)}" target="_blank" rel="noreferrer">${escapeHtml(sourceLabel(row))}</a>` : `<span class="source-link">${escapeHtml(sourceLabel(row))}</span>`;
-    return `<article class="queue-item ${active ? "active" : ""}" data-id="${row.id}" data-state="${row.state}">
-      <div class="queue-header-row">
-        <div>
-          <h3 class="queue-title">${escapeHtml(row.title)}</h3>
-          <div class="queue-meta">${source}<span>${escapeHtml(meta)}</span></div>
+    const primaryLabel = failed ? "Review" : active && state.playback.status === "playing" ? "Restart" : "Play";
+    const primaryAction = failed ? "edit" : "play";
+    return `<article class="queue-item ${active ? "active" : ""} ${failed ? "needs-repair" : ""}" data-id="${row.id}" data-state="${row.state}">
+      <span class="source-glyph" aria-hidden="true">${escapeHtml(sourceInitial(row))}</span>
+      <div class="queue-content">
+        <div class="queue-header-row">
+          <div>
+            <h3 class="queue-title">${escapeHtml(row.title)}</h3>
+            <div class="queue-meta">${source}<span>${escapeHtml(meta)}</span><span>${escapeHtml(quality)}</span></div>
+          </div>
+          <span class="status-badge ${failed ? "failed" : row.state}">${failed ? "needs fix" : row.state}</span>
         </div>
-        <span class="status-badge ${row.state}">${row.state}</span>
+        <p class="queue-text">${escapeHtml(failed ? row.error || "Extraction failed. Review the captured source or paste text manually." : row.text)}</p>
+        ${failed ? `<div class="repair-strip"><strong>Repair path</strong><span>Review the item, paste readable text, or retry extraction from the current tab.</span></div>` : ""}
       </div>
-      <p class="queue-text">${escapeHtml(failed ? row.error || "Extraction failed." : row.text)}</p>
       <div class="queue-actions">
-        <button class="button primary small" data-action="play" type="button">${active && state.playback.status === "playing" ? "Restart" : "Play"}</button>
-        <button class="button secondary small" data-action="edit" type="button">Edit</button>
-        <button class="button secondary small" data-action="duplicate" type="button">Duplicate</button>
-        <button class="button secondary small" data-action="up" type="button" aria-label="Move up">↑</button>
-        <button class="button secondary small" data-action="down" type="button" aria-label="Move down">↓</button>
+        <button class="button primary small" data-action="${primaryAction}" type="button">${primaryLabel}</button>
         ${failed ? "<button class=\"button secondary small\" data-action=\"retry\" type=\"button\">Retry</button>" : ""}
         ${completed ? "<button class=\"button secondary small\" data-action=\"queue\" type=\"button\">Queue again</button>" : ""}
-        <button class="button danger small" data-action="delete" type="button">Delete</button>
+        <button class="button secondary small" data-action="edit" type="button">Edit</button>
+        <button class="button secondary small overflow-action" data-action="duplicate" type="button">Duplicate</button>
+        <button class="button secondary small overflow-action" data-action="up" type="button" aria-label="Move up">↑</button>
+        <button class="button secondary small overflow-action" data-action="down" type="button" aria-label="Move down">↓</button>
+        <button class="button danger small overflow-action" data-action="delete" type="button">Delete</button>
       </div>
     </article>`;
   }).join("");
@@ -148,11 +157,11 @@ const renderNow = () => {
   els.statusBadge.className = `status-badge ${state.playback.status}`;
   els.statusBadge.textContent = statusLabel(state.playback.status);
   els.nowTitle.textContent = item?.title || "Nothing queued";
-  els.nowMeta.textContent = item ? `${sourceLabel(item)} · ${progress.count} segments · ${fmtTime(progress.elapsed)} / ${fmtTime(progress.total)}` : "Capture a page, selection, or paste text to begin.";
+  els.nowMeta.textContent = item ? `${sourceLabel(item)} · ${progress.count} segments · ${fmtTime(progress.elapsed)} / ${fmtTime(progress.total)} · ${qualityLabel(item)}` : "Capture this page, selected text, or paste text to begin.";
   els.progressFill.style.width = `${progress.percent}%`;
   els.progress.setAttribute("aria-valuenow", String(progress.percent));
   els.segmentLabel.textContent = item ? `Segment ${Math.min(state.playback.segmentIndex + 1, progress.count)} of ${progress.count}` : "Ready";
-  els.segmentText.textContent = progress.segment?.text || item?.text?.slice(0, 420) || "No readable segment is active.";
+  els.segmentText.textContent = progress.segment?.text || item?.text?.slice(0, 420) || "No text is queued yet. Capture the current page or paste text to create the first item.";
   els.playPause.textContent = state.playback.status === "playing" ? "Ⅱ" : "▶";
   els.sleepSelect.value = String(state.settings.sleepMinutes || 0);
   els.focusItemTitle.textContent = item?.title || "Nothing queued";
@@ -163,7 +172,7 @@ const renderSummary = () => {
   const summary = queueSummary(state);
   els.summaryItems.textContent = String(summary.total);
   els.summaryQueued.textContent = String(summary.queued);
-  els.summaryTime.textContent = fmtTime(summary.seconds);
+  els.summaryTime.textContent = `${fmtTime(summary.seconds)} total`;
 };
 
 const renderOnboarding = () => {
@@ -230,12 +239,13 @@ const commitPreview = async (play = false) => {
     text: els.previewText.value.trim(),
     sourceType: previewCapture?.sourceType === "failed" && wordCount(els.previewText.value) >= 3 ? "paste" : previewCapture?.sourceType || "paste",
     failed: wordCount(els.previewText.value) < 3,
-    error: wordCount(els.previewText.value) < 3 ? "Not enough text to add." : ""
+    error: wordCount(els.previewText.value) < 3 ? "Not enough text to add." : "",
+    quality: wordCount(els.previewText.value) < 25 ? "uncertain" : previewCapture?.quality || "manual"
   };
   if (editingItemId) {
     await updateState((current) => ({
       ...current,
-      queue: current.queue.map((item) => item.id === editingItemId ? normalizeItem({ ...item, title: capture.title, text: capture.text, sourceTitle: capture.sourceTitle || capture.title, sourceUrl: capture.sourceUrl, sourceType: capture.sourceType, state: capture.failed ? "failed" : "queued", error: capture.error || "", updatedAt: Date.now(), rate: current.settings.rate }) : item)
+      queue: current.queue.map((item) => item.id === editingItemId ? normalizeItem({ ...item, title: capture.title, text: capture.text, sourceTitle: capture.sourceTitle || capture.title, sourceUrl: capture.sourceUrl, sourceType: capture.sourceType, state: capture.failed ? "failed" : "queued", error: capture.error || "", quality: capture.quality || item.quality, updatedAt: Date.now(), rate: current.settings.rate }) : item)
     }));
     toast("Item updated");
     hidePreview();
@@ -259,7 +269,7 @@ const addPaste = async () => {
     toast("Paste more text before adding.", "error");
     return;
   }
-  const item = createQueueItem({ title: "Pasted text", text, sourceType: "paste", sourceTitle: "Side panel paste" }, state.settings);
+  const item = createQueueItem({ title: "Pasted text", text, sourceType: "paste", sourceTitle: "Side panel paste", quality: "manual" }, state.settings);
   await addItemToState(item, { activate: !state.playback.itemId });
   els.pasteInput.value = "";
   els.pasteStats.textContent = "0 words · 0:00";

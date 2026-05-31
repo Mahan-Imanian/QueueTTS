@@ -1,24 +1,23 @@
 # Changelog
 
+## 2.3.0
+
+- Rebuilt popup as a compact Chrome-extension command remote.
+- Eliminated popup horizontal overflow risk with fixed-width popup density and contained controls.
+- Made capture the dominant empty-state workflow.
+- Hid playback deck when no queue item exists.
+- Replaced generic card stack with fewer, sharper surfaces.
+- Added source glyphs and richer source metadata to queue rows.
+- Added extraction quality metadata preservation.
+- Redesigned failed captures as repair-first queue rows with review and retry paths.
+- Converted boxed metrics into a compact live status strip.
+- Reduced teal overuse with stronger semantic color tokens.
+- Added atmospheric but restrained dark surface system.
+- Improved desktop side panel layout with primary playback column and capture rail.
+- Collapsed secondary queue actions behind hover/focus affordances on larger layouts.
+- Updated README and rebuild notes for the latest product direction.
+
 ## 2.2.0
 
-- Rebuilt the popup as a compact queue command center.
-- Removed the stacked-card empty state and repeated zero-value metrics.
-- Hid full playback controls when the queue is empty.
-- Replaced full-width Back and Next controls with a compact transport row.
-- Made capture the primary empty-state workflow.
-- Added context-aware primary action behavior for selected text, current page, and paste fallback.
-- Added popup command palette with capture, queue, playback, and settings actions.
-- Added visible shortcut hints through command behavior and compact copy.
-- Added compact speech-rate controls in the popup.
-- Tightened popup spacing, radius, borders, hierarchy, and copy.
-- Reduced decorative surface effects and fake premium styling.
-- Strengthened unsupported-tab recovery with direct paste fallback.
-- Preserved side panel queue management, context menus, local storage, import/export, pronunciation dictionary, focus mode, and Chrome TTS playback.
-
-## 2.1.0
-
-- Converted QueueTTS into a Manifest V3 Chrome extension.
-- Added toolbar popup, side panel, options page, service worker, content script, context menus, and extension icons.
-- Added local-first queue persistence through `chrome.storage.local`.
-- Added browser text-to-speech playback through `chrome.tts`.
+- Rebuilt QueueTTS into a Manifest V3 Chrome extension.
+- Added toolbar popup, side panel, options page, content capture, background service worker, context menus, icons, and local storage persistence.
