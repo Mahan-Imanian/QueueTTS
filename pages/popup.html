@@ -10,87 +10,103 @@
   <body class="popup-shell">
     <main class="popup" aria-label="QueueTTS popup">
       <header class="popup-header">
-        <a class="brand" href="sidepanel.html" target="_blank" aria-label="Open QueueTTS queue">
+        <button class="brand button-reset" id="openQueueFromBrand" type="button" aria-label="Open QueueTTS queue">
           <span class="brand-mark"><img src="../assets/icons/mark.svg" alt="" /></span>
-          <span><span class="brand-kicker">QueueTTS</span><span class="brand-name">Listen later</span></span>
-        </a>
+          <span><span class="brand-name single">QueueTTS</span></span>
+        </button>
         <div class="header-actions">
-          <span class="queue-pill" id="queuePill">0 queued</span>
+          <button class="queue-pill" id="openQueue" type="button">0 queued</button>
           <button class="icon-button small-icon" id="openOptions" type="button" aria-label="Open settings">⚙</button>
         </div>
       </header>
 
-      <section class="context-strip" aria-label="Current browser context">
-        <span class="source-dot" aria-hidden="true"></span>
-        <div>
-          <p id="contextTitle">Current tab unavailable</p>
-          <span id="contextMeta">Use paste or open a regular webpage.</span>
+      <section class="context-bar" id="contextBar" aria-label="Current browser context">
+        <span class="context-icon" aria-hidden="true"></span>
+        <div class="context-copy">
+          <strong id="contextTitle">Reading current tab</strong>
+          <span id="contextMeta">Checking page context…</span>
         </div>
       </section>
 
-      <section class="player-card" aria-labelledby="nowTitle">
-        <div class="player-topline">
-          <p class="kicker">Now playing</p>
+      <section class="empty-command hidden" id="emptyCommand" aria-labelledby="emptyTitle">
+        <p class="mode-label">Ready</p>
+        <h1 id="emptyTitle">Add text to start listening.</h1>
+        <p id="emptyCopy">Capture this page, selected text, or paste manually. Everything stays local in Chrome.</p>
+        <div class="primary-stack">
+          <button class="button primary full" id="primaryCapture" type="button">Add this page</button>
+          <div class="compact-actions">
+            <button class="button secondary" id="captureSelection" type="button">Selection</button>
+            <button class="button secondary" id="togglePaste" type="button">Paste</button>
+            <button class="button secondary" id="commandOpen" type="button">⌘K</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="player-panel hidden" id="playerPanel" aria-labelledby="nowTitle">
+        <div class="player-header">
+          <div class="title-block">
+            <p class="mode-label">Now playing</p>
+            <h1 id="nowTitle">Nothing queued</h1>
+            <p id="nowMeta">No source</p>
+          </div>
           <span class="status-badge" id="statusBadge">Idle</span>
         </div>
-        <h1 id="nowTitle">Queue is empty</h1>
-        <p id="nowMeta" class="muted">Capture a page, selected text, or paste text to start listening.</p>
-        <div class="progress-time">
+        <div class="progress-row">
           <span id="elapsedTime">0:00</span>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress"><span></span></div>
           <span id="remainingTime">0:00 left</span>
         </div>
-        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress"><span></span></div>
-        <p class="spoken" id="spokenText">Your queue is stored locally in Chrome. No account or server is required.</p>
+        <p class="spoken" id="spokenText">No active segment.</p>
         <div class="transport-row-mini" aria-label="Playback controls">
           <button class="icon-button" id="prevItem" type="button" aria-label="Previous item">‹</button>
-          <button class="button secondary small" id="prevSegment" type="button">Back</button>
-          <button class="icon-button primary large" id="playPause" type="button" aria-label="Play or pause">▶</button>
-          <button class="button secondary small" id="nextSegment" type="button">Next</button>
+          <button class="icon-button" id="prevSegment" type="button" aria-label="Previous segment">−</button>
+          <button class="icon-button primary" id="playPause" type="button" aria-label="Play or pause">▶</button>
+          <button class="icon-button" id="nextSegment" type="button" aria-label="Next segment">+</button>
           <button class="icon-button" id="nextItem" type="button" aria-label="Next item">›</button>
         </div>
-        <div class="player-footer">
-          <span class="source-pill" id="voiceChip">Default voice · 1×</span>
-          <button class="button ghost small" id="openQueue" type="button">Open queue</button>
-        </div>
       </section>
 
-      <section class="capture-panel" aria-labelledby="captureTitle">
-        <div class="capture-heading">
-          <div>
-            <p class="kicker" id="captureTitle">Capture</p>
-            <p class="capture-hint" id="captureHint">Best action updates from the current tab.</p>
-          </div>
-          <span class="source-pill" id="selectionState">No selection</span>
-        </div>
-        <button class="button primary full" id="primaryCapture" type="button">Add this page</button>
-        <div class="capture-actions">
-          <button class="button secondary" id="captureSelection" type="button">Selection</button>
-          <button class="button secondary" id="capturePage" type="button">Page</button>
-          <button class="button secondary" id="togglePaste" type="button">Paste</button>
-        </div>
-        <div class="paste-drawer hidden" id="pasteDrawer">
-          <label class="sr-only" for="pasteInput">Paste text</label>
-          <textarea id="pasteInput" rows="3" placeholder="Paste text to queue..."></textarea>
-          <div class="row-between">
-            <span class="muted" id="pasteStats">0 words</span>
-            <div class="inline-actions">
-              <button class="button ghost small" id="clearPaste" type="button">Clear</button>
-              <button class="button primary small" id="addPaste" type="button">Add</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="queue-preview" aria-labelledby="queuePreviewTitle">
+      <section class="paste-drawer hidden" id="pasteDrawer" aria-labelledby="pasteTitle">
         <div class="row-between">
-          <p class="kicker" id="queuePreviewTitle">Up next</p>
-          <span class="muted" id="timeCount">0:00 total</span>
+          <p class="mode-label" id="pasteTitle">Paste</p>
+          <span class="muted" id="pasteStats">0 words</span>
+        </div>
+        <label class="sr-only" for="pasteInput">Paste text</label>
+        <textarea id="pasteInput" rows="4" placeholder="Paste text to queue…"></textarea>
+        <div class="row-between">
+          <button class="button ghost small" id="clearPaste" type="button">Clear</button>
+          <button class="button primary small" id="addPaste" type="button">Add to queue</button>
+        </div>
+      </section>
+
+      <section class="queue-preview" id="queuePreview" aria-labelledby="queuePreviewTitle">
+        <div class="section-line">
+          <p class="mode-label" id="queuePreviewTitle">Queue</p>
+          <span id="timeCount">0:00</span>
         </div>
         <div id="queuePreviewList" class="queue-preview-list"></div>
       </section>
 
-      <p class="notice" id="statusNotice">Right-click selected text on any page for the fastest capture.</p>
+      <footer class="utility-footer" aria-label="Quick settings and shortcuts">
+        <button class="footer-chip" id="voiceChip" type="button">Voice settings</button>
+        <div class="rate-group" aria-label="Speech rate">
+          <button class="rate-chip" data-rate="0.9" type="button">.9×</button>
+          <button class="rate-chip" data-rate="1" type="button">1×</button>
+          <button class="rate-chip" data-rate="1.15" type="button">1.15×</button>
+        </div>
+      </footer>
+
+      <p class="notice-line" id="statusNotice">Right-click selected text for the fastest capture.</p>
     </main>
+
+    <div class="command-backdrop hidden" id="commandModal" role="dialog" aria-modal="true" aria-labelledby="commandTitle">
+      <section class="command-surface">
+        <label class="sr-only" for="commandInput" id="commandTitle">Command</label>
+        <input id="commandInput" type="search" autocomplete="off" placeholder="Type a command…" />
+        <div class="command-list" id="commandList" role="listbox"></div>
+      </section>
+    </div>
+
     <div class="toast-stack" id="toasts" aria-live="polite"></div>
     <script type="module" src="../src/popup.js"></script>
   </body>
