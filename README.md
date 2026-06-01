@@ -22,22 +22,22 @@ npm run build
 
 The popup is a compact command remote.
 
-- It shows the current tab state and selected-text availability.
+- It shows current tab capture readiness and selected-text availability.
 - The primary action changes to the best capture path: selected text, current page, or paste.
 - Playback controls appear only when there is a playable queue item.
-- Queue preview rows show source, word count, duration, and quick play.
+- Queue preview rows show upcoming items only, not a duplicated now-playing row.
 - `Ctrl/⌘ K` opens the command palette.
 - `P` opens paste, `Q` opens the full queue, and `Space` toggles playback.
 
-## Use the side panel / queue page
+## Use the side panel / full queue
 
 Open the queue from the popup, context menu, or command palette.
 
 The full queue surface includes:
 
-- Premium playback deck
+- Playback deck
 - Capture preview before queueing
-- Dense queue rows
+- Dense source-aware queue rows
 - Failed extraction repair flow
 - Search and filters
 - Focus mode
@@ -54,19 +54,26 @@ Right-click on a page or selected text:
 
 ## Options
 
-The options page contains:
+The options page is an operational settings surface, not a marketing page.
 
+It includes:
+
+- Live status strip for voice, queue, storage, and local privacy
+- Sticky settings navigation
 - Voice selection
 - Language hint
-- Speech rate, pitch, and volume
+- Speech rate, pitch, and volume with live values
+- Voice sample playback
 - Skip interval
 - Sleep timer default
 - Heading behavior
 - Theme and reduced motion
-- Pronunciation dictionary
-- Import/export and data clearing
-- Permission explanations
-- Keyboard shortcuts
+- Structured pronunciation rule editor with rule testing
+- Advanced raw dictionary mode
+- Import/export backup flows
+- Data clearing with a separated reset zone
+- Permission status rows
+- Keyboard shortcut reference
 
 ## Privacy and storage
 
