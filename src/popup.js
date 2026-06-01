@@ -142,7 +142,7 @@ const renderPlayer = (item, progress) => {
 
 const renderQueuePreview = (item) => {
   const activeIds = new Set(item ? [item.id] : []);
-  const rows = state.queue.filter((candidate) => candidate.state !== "completed").slice(0, 4);
+  const rows = state.queue.filter((candidate) => candidate.state !== "completed" && !activeIds.has(candidate.id)).slice(0, 3);
   els.queuePreview.classList.toggle("hidden", rows.length === 0);
   if (!rows.length) {
     els.queuePreviewList.innerHTML = "";

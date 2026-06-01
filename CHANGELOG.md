@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.4.0
+
+- Reworked the settings page from a marketing-style dashboard into an operational configuration surface.
+- Replaced the oversized settings hero with a compact live status strip for voice, queue, storage, and local privacy state.
+- Added sticky settings navigation for Voice, Queue, Pronunciation, Storage, Privacy, and Shortcuts.
+- Converted the pronunciation dictionary from a raw textarea-first control into a structured rule editor with inline add, edit, delete, and test actions.
+- Added voice preview controls and live range values for rate, pitch, and volume.
+- Reframed permissions as live permission rows with why-needed explanations and current role labels.
+- Moved destructive storage reset into a separated danger zone with stronger confirmation copy.
+- Tightened semantic color use: teal for active/primary, violet for voice tuning, blue for source/info, amber for attention, rose for destructive/error.
+- Hid the active item from popup queue preview to avoid repeating the now-playing item.
+- Updated documentation and rebuild notes for the latest human-expert critique pass.
+
 ## 2.3.0
 
 - Rebuilt popup as a compact Chrome-extension command remote.
