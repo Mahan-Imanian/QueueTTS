@@ -1,18 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "QueueTTS",
+  "name": "QueueTTS: listen later",
   "short_name": "QueueTTS",
-  "version": "2.4.0",
-  "description": "A compact local-first Chrome extension for capturing web text, queueing it, and listening later with browser text-to-speech.",
+  "version": "3.0.0",
+  "description": "Add articles and selected text to a queue, then listen in order with your computer's voices. Everything stays in your browser.",
   "minimum_chrome_version": "116",
   "permissions": [
     "storage",
-    "contextMenus",
+    "unlimitedStorage",
     "activeTab",
     "scripting",
     "sidePanel",
     "tts",
-    "alarms"
+    "contextMenus",
+    "alarms",
+    "favicon"
   ],
   "action": {
     "default_title": "QueueTTS",
@@ -25,13 +27,42 @@
     }
   },
   "background": {
-    "service_worker": "src/background.js",
+    "service_worker": "src/background/index.js",
     "type": "module"
   },
   "side_panel": {
-    "default_path": "pages/sidepanel.html"
+    "default_path": "pages/panel.html"
   },
-  "options_page": "pages/options.html",
+  "options_ui": {
+    "page": "pages/options.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+Q"
+      },
+      "description": "Open QueueTTS"
+    },
+    "queue-page": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Add this page, or the selected text, to the queue"
+    },
+    "toggle-playback": {
+      "suggested_key": {
+        "default": "Alt+Shift+L"
+      },
+      "description": "Play or pause"
+    },
+    "skip-forward": {
+      "description": "Forward one sentence"
+    },
+    "skip-back": {
+      "description": "Back one sentence"
+    }
+  },
   "icons": {
     "16": "assets/icons/icon-16.png",
     "32": "assets/icons/icon-32.png",

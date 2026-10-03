@@ -1,0 +1,104 @@
+.welcome-main {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 72px var(--s-6) 64px;
+}
+
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-bottom: var(--s-8);
+  font-weight: 600;
+}
+
+.welcome-brand .mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+}
+
+.welcome h1 {
+  font-family: var(--font-read);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  margin-top: var(--s-4);
+  color: var(--ink-2);
+  font-size: var(--t-lg);
+  line-height: 1.55;
+}
+
+.demo {
+  margin: var(--s-6) 0 var(--s-8);
+}
+
+.demo-player {
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.steps {
+  display: grid;
+  gap: var(--s-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.steps li {
+  position: relative;
+  padding-left: 40px;
+  counter-increment: step;
+}
+
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.steps h2 {
+  font-size: var(--t-lg);
+  font-weight: 600;
+}
+
+.steps p {
+  margin-top: 2px;
+  color: var(--ink-2);
+}
+
+.privacy-line {
+  margin-top: var(--s-8);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--line);
+  color: var(--ink-2);
+}
+
+.welcome-actions {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-5);
+}
+
+.welcome-actions a {
+  text-decoration: none;
+}

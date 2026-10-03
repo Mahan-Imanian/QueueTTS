@@ -3,148 +3,139 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>QueueTTS Settings</title>
-    <link rel="stylesheet" href="../styles/base.css" />
-    <link rel="stylesheet" href="../styles/options.css" />
+    <title>QueueTTS settings</title>
+    <link rel="stylesheet" href="../styles/ui.css" />
+    <link rel="stylesheet" href="../styles/settings.css" />
   </head>
-  <body>
-    <header class="options-top">
-      <a class="brand" href="sidepanel.html" aria-label="Open QueueTTS queue">
-        <span class="brand-mark"><img src="../assets/icons/mark.svg" alt="" /></span>
-        <span><span class="brand-kicker">Local speech queue</span><span class="brand-name">QueueTTS</span></span>
-      </a>
-      <div class="top-cluster">
-        <span class="status-badge completed" id="saveState">Saved</span>
-        <button class="button secondary small" id="openQueue" type="button">Open queue</button>
-      </div>
+  <body class="settings">
+    <header class="settings-top">
+      <img class="mark" src="../assets/icons/mark.svg" alt="" width="24" height="24" />
+      <h1>Settings</h1>
+      <span class="meta saved" id="saved" role="status" aria-live="polite"></span>
     </header>
+    <main class="settings-main">
+      <section aria-labelledby="voiceHeading">
+        <h2 id="voiceHeading">Voice</h2>
+        <div class="setting">
+          <div class="setting-text">
+            <label class="field-label" for="voice">Voice</label>
+            <p class="field-hint" id="voiceHint">Automatic picks the best voice on this computer for each article’s language.</p>
+          </div>
+          <div class="voice-pick">
+            <select class="select" id="voice"></select>
+            <button class="btn" id="preview" type="button"></button>
+          </div>
+        </div>
+        <div class="setting">
+          <div class="setting-text">
+            <label class="field-label" for="network">Allow online voices</label>
+            <p class="field-hint">Voices named “Google …” sound more natural, but Chrome sends the text being read to Google to speak it.</p>
+          </div>
+          <input class="switch" id="network" type="checkbox" />
+        </div>
+        <div class="setting">
+          <div class="setting-text"><label class="field-label" for="rate">Speed</label></div>
+          <div class="range-row"><input class="range" id="rate" type="range" min="0.5" max="3" step="0.1" /><output class="meta" id="rateOut" for="rate"></output></div>
+        </div>
+        <div class="setting">
+          <div class="setting-text"><label class="field-label" for="pitch">Pitch</label></div>
+          <div class="range-row"><input class="range" id="pitch" type="range" min="0" max="2" step="0.1" /><output class="meta" id="pitchOut" for="pitch"></output></div>
+        </div>
+        <div class="setting">
+          <div class="setting-text"><label class="field-label" for="volume">Volume</label></div>
+          <div class="range-row"><input class="range" id="volume" type="range" min="0" max="1" step="0.05" /><output class="meta" id="volumeOut" for="volume"></output></div>
+        </div>
+      </section>
 
-    <main class="options-layout">
-      <aside class="settings-nav" aria-label="Settings sections">
-        <a href="#status">Status</a>
-        <a href="#voice">Voice</a>
-        <a href="#behavior">Queue</a>
-        <a href="#dictionary">Pronunciation</a>
-        <a href="#storage">Storage</a>
-        <a href="#privacy">Privacy</a>
-        <a href="#shortcuts">Shortcuts</a>
-      </aside>
+      <section aria-labelledby="readingHeading">
+        <h2 id="readingHeading">Reading</h2>
+        <div class="setting">
+          <div class="setting-text">
+            <label class="field-label" for="autoAdvance">Play the next item automatically</label>
+            <p class="field-hint">When an article ends, start the next one in the queue.</p>
+          </div>
+          <input class="switch" id="autoAdvance" type="checkbox" />
+        </div>
+        <div class="setting">
+          <div class="setting-text">
+            <label class="field-label" for="readCode">Read code blocks</label>
+            <p class="field-hint">Code is skipped by default. It still shows in the Reading view.</p>
+          </div>
+          <input class="switch" id="readCode" type="checkbox" />
+        </div>
+        <div class="setting">
+          <div class="setting-text">
+            <label class="field-label" for="announceHeadings">Say “Section” before headings</label>
+            <p class="field-hint">Headings are always read with a short pause before them.</p>
+          </div>
+          <input class="switch" id="announceHeadings" type="checkbox" />
+        </div>
+      </section>
 
-      <div class="settings-content">
-        <section class="status-strip panel" id="status" aria-label="QueueTTS live status">
-          <div class="status-copy">
-            <p class="kicker">Ready locally</p>
-            <h1>Audio, queue, and privacy controls.</h1>
+      <section aria-labelledby="looksHeading">
+        <h2 id="looksHeading">Appearance</h2>
+        <div class="setting">
+          <div class="setting-text"><span class="field-label" id="themeLabel">Theme</span></div>
+          <div class="segmented" role="radiogroup" aria-labelledby="themeLabel">
+            <label><input type="radio" name="theme" value="system" /><span>System</span></label>
+            <label><input type="radio" name="theme" value="light" /><span>Light</span></label>
+            <label><input type="radio" name="theme" value="dark" /><span>Dark</span></label>
           </div>
-          <div class="status-metrics">
-            <div><span>Voice</span><strong id="statusVoice">Default</strong></div>
-            <div><span>Queue</span><strong id="statusQueue">0 items</strong></div>
-            <div><span>Storage</span><strong id="statusStorage">0 B</strong></div>
-            <div><span>Privacy</span><strong>Local only</strong></div>
-          </div>
-        </section>
+        </div>
+      </section>
 
-        <section class="settings-card panel primary-card" id="voice" aria-labelledby="voiceTitle">
-          <div class="section-head compact-head">
-            <div><p class="kicker">Primary controls</p><h2 id="voiceTitle">Voice and playback</h2></div>
-            <span class="status-badge" id="voiceStatus">Loading</span>
-          </div>
-          <div class="voice-layout">
-            <div class="form-grid">
-              <label class="field" for="voiceSelect"><span>Voice</span><select id="voiceSelect"></select></label>
-              <label class="field" for="langInput"><span>Language hint</span><input id="langInput" type="text" inputmode="text" placeholder="en-US" /></label>
-              <label class="field range-field" for="rateInput"><span>Rate <output id="rateValue">1×</output></span><input id="rateInput" type="range" min="0.5" max="3" step="0.05" /></label>
-              <label class="field range-field" for="pitchInput"><span>Pitch <output id="pitchValue">1</output></span><input id="pitchInput" type="range" min="0" max="2" step="0.05" /></label>
-              <label class="field range-field" for="volumeInput"><span>Volume <output id="volumeValue">100%</output></span><input id="volumeInput" type="range" min="0" max="1" step="0.05" /></label>
-              <label class="field" for="skipSelect"><span>Skip interval</span><select id="skipSelect"><option>10</option><option>15</option><option>30</option><option>45</option><option>60</option></select></label>
-            </div>
-            <div class="preview-card">
-              <p class="kicker">Live preview</p>
-              <p id="voicePreview">QueueTTS can capture text from the browser and read it locally.</p>
-              <div class="row-between">
-                <button class="button primary" id="playSample" type="button">Test voice</button>
-                <button class="button secondary" id="stopSample" type="button">Stop</button>
-              </div>
-            </div>
-          </div>
-        </section>
+      <section aria-labelledby="keysHeading">
+        <h2 id="keysHeading">Shortcuts</h2>
+        <p class="section-note">These work anywhere in Chrome.</p>
+        <dl class="shortcut-list" id="shortcuts"></dl>
+        <button class="btn" id="editShortcuts" type="button">Change shortcuts</button>
+      </section>
 
-        <section class="settings-card panel" id="behavior" aria-labelledby="behaviorTitle">
-          <div class="section-head compact-head"><div><p class="kicker">Defaults</p><h2 id="behaviorTitle">Queue behavior</h2></div></div>
-          <div class="form-grid dense-form">
-            <label class="field" for="headingMode"><span>Headings</span><select id="headingMode"><option value="cue">Read heading cue</option><option value="pause">Pause after heading</option><option value="off">Ignore headings</option></select></label>
-            <label class="field" for="sleepMinutes"><span>Sleep timer</span><select id="sleepMinutes"><option value="0">Off</option><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select></label>
-            <label class="field" for="theme"><span>Theme</span><select id="theme"><option value="dark">Dark</option><option value="light">Light</option></select></label>
-            <label class="toggle-row" for="reduceMotion"><input id="reduceMotion" type="checkbox" /> <span>Reduce motion</span></label>
-            <label class="toggle-row" for="autoPlayCaptured"><input id="autoPlayCaptured" type="checkbox" /> <span>Auto-play new captures</span></label>
-          </div>
-        </section>
+      <section aria-labelledby="pronHeading">
+        <h2 id="pronHeading">Pronunciations</h2>
+        <p class="section-note">Teach the voice names or terms it gets wrong.</p>
+        <ul class="pron-list" id="pronList"></ul>
+        <form class="pron-add" id="pronForm">
+          <label class="sr-only" for="pronFrom">Written as</label>
+          <input class="input" id="pronFrom" placeholder="Written as, e.g. nginx" autocomplete="off" />
+          <label class="sr-only" for="pronTo">Say it as</label>
+          <input class="input" id="pronTo" placeholder="Say it as, e.g. engine x" autocomplete="off" />
+          <button class="btn" type="submit">Add</button>
+        </form>
+      </section>
 
-        <section class="settings-card panel wide" id="dictionary" aria-labelledby="dictionaryTitle">
-          <div class="section-head compact-head">
-            <div><p class="kicker">Pronunciation</p><h2 id="dictionaryTitle">Rule editor</h2></div>
-            <span class="badge" id="dictionaryCount">0 rules</span>
-          </div>
-          <div class="rule-composer">
-            <label class="field" for="ruleFrom"><span>When text says</span><input id="ruleFrom" type="text" placeholder="API" /></label>
-            <label class="field" for="ruleTo"><span>Speak as</span><input id="ruleTo" type="text" placeholder="A P I" /></label>
-            <button class="button primary" id="addRule" type="button">Add rule</button>
-          </div>
-          <div class="rule-list" id="ruleList" aria-live="polite"></div>
-          <details class="advanced-raw">
-            <summary>Advanced raw dictionary</summary>
-            <label class="field" for="dictionaryRaw"><span>One replacement per line: source =&gt; spoken form</span><textarea id="dictionaryRaw" rows="6" spellcheck="false"></textarea></label>
-            <button class="button secondary small" id="applyRaw" type="button">Apply raw rules</button>
-          </details>
-        </section>
+      <section aria-labelledby="dataHeading">
+        <h2 id="dataHeading">Your data</h2>
+        <p class="section-note" id="usage"></p>
+        <div class="button-row">
+          <button class="btn" id="export" type="button">Export queue</button>
+          <button class="btn" id="importButton" type="button">Import…</button>
+          <input id="importFile" type="file" accept="application/json,.json" hidden />
+          <button class="btn" id="clearHistory" type="button">Clear history</button>
+          <button class="btn btn-danger" id="reset" type="button">Delete everything</button>
+        </div>
+      </section>
 
-        <section class="settings-card panel" id="storage" aria-labelledby="storageTitle">
-          <div class="section-head compact-head"><div><p class="kicker">Data</p><h2 id="storageTitle">Storage and backup</h2></div></div>
-          <div class="storage-summary">
-            <div><span>Items</span><strong id="storageItems">0</strong></div>
-            <div><span>Words</span><strong id="storageWords">0</strong></div>
-            <div><span>Local size</span><strong id="storageBytes">0</strong></div>
-          </div>
-          <div class="button-grid">
-            <button class="button secondary" id="exportData" type="button">Export backup</button>
-            <label class="file-action" for="importFile">Import backup</label>
-            <input class="hidden" id="importFile" type="file" accept="application/json,.json" />
-            <button class="button secondary" id="clearCompleted" type="button">Clear completed</button>
-          </div>
-          <div class="danger-zone">
-            <div><strong>Reset local QueueTTS data</strong><p>This removes queue items, counters, and playback position. Export a backup first.</p></div>
-            <button class="button danger" id="clearAll" type="button">Clear all data</button>
-          </div>
-        </section>
-
-        <section class="settings-card panel" id="privacy" aria-labelledby="privacyTitle">
-          <div class="section-head compact-head"><div><p class="kicker">Trust</p><h2 id="privacyTitle">Permission status</h2></div></div>
-          <div class="permission-list">
-            <div><strong>storage</strong><span>Local queue, settings, counters, dictionary</span><em>Required</em></div>
-            <div><strong>activeTab</strong><span>Reads the active page only after a user action</span><em>User-triggered</em></div>
-            <div><strong>scripting</strong><span>Runs the bundled capture script on that active tab</span><em>Local file</em></div>
-            <div><strong>contextMenus</strong><span>Adds right-click capture actions</span><em>Browser native</em></div>
-            <div><strong>sidePanel</strong><span>Opens the full queue beside a webpage</span><em>Chrome UI</em></div>
-            <div><strong>tts</strong><span>Uses Chrome text-to-speech voices</span><em>Audio</em></div>
-            <div><strong>alarms</strong><span>Keeps the sleep timer local</span><em>No server</em></div>
-          </div>
-        </section>
-
-        <section class="settings-card panel wide" id="shortcuts" aria-labelledby="shortcutsTitle">
-          <div class="section-head compact-head"><div><p class="kicker">Keyboard</p><h2 id="shortcutsTitle">Command shortcuts</h2></div></div>
-          <div class="shortcut-grid">
-            <span>Space</span><p>Play or pause</p>
-            <span>J / K</span><p>Next or previous segment</p>
-            <span>N / P</span><p>Next or previous item</p>
-            <span>/</span><p>Search queue</p>
-            <span>F</span><p>Open focus mode</p>
-            <span>Ctrl/⌘ K</span><p>Open command menu</p>
-            <span>Ctrl/⌘ Enter</span><p>Add pasted text in popup</p>
-          </div>
-        </section>
-      </div>
+      <section aria-labelledby="privacyHeading">
+        <h2 id="privacyHeading">Privacy</h2>
+        <ul class="privacy">
+          <li>Your queue, the text of everything you add, and your settings are stored only in this browser profile.</li>
+          <li>QueueTTS has no server and no analytics, and makes no network requests of its own.</li>
+          <li>A page is read only when you add it: through the toolbar button, the right-click menu or your shortcut.</li>
+          <li id="voicePrivacy"></li>
+        </ul>
+      </section>
     </main>
-    <div class="toast-stack" id="toasts" aria-live="polite"></div>
-    <script type="module" src="../src/options.js"></script>
+    <dialog id="confirm" aria-labelledby="confirmTitle">
+      <form method="dialog" class="dialog-body">
+        <h2 id="confirmTitle"></h2>
+        <p id="confirmText"></p>
+        <div class="dialog-actions">
+          <button class="btn btn-quiet" value="cancel" type="submit">Cancel</button>
+          <button class="btn btn-primary" id="confirmOk" value="ok" type="submit"></button>
+        </div>
+      </form>
+    </dialog>
+    <script type="module" src="../src/ui/options.js"></script>
   </body>
 </html>
