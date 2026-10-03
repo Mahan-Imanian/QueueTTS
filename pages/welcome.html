@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Welcome to QueueTTS</title>
+    <link rel="stylesheet" href="../styles/ui.css" />
+    <link rel="stylesheet" href="../styles/surfaces.css" />
+    <link rel="stylesheet" href="../styles/welcome.css" />
+  </head>
+  <body class="welcome">
+    <main class="welcome-main">
+      <header class="welcome-brand"><img class="mark" src="../assets/icons/mark.svg" alt="" width="28" height="28" /><span>QueueTTS</span></header>
+      <h1>Listen to the web later, in order.</h1>
+      <p class="lede">Add articles as you find them. QueueTTS reads them aloud one after another, and remembers the sentence you stopped on.</p>
+      <div class="demo">
+        <button class="btn btn-primary btn-lg" id="demo" type="button"></button>
+        <section class="np demo-player" id="player" aria-label="Now playing" hidden></section>
+      </div>
+      <ol class="steps">
+        <li>
+          <h2>Pin it</h2>
+          <p>Open the puzzle-piece menu in the toolbar and pin QueueTTS, so its button is always one click away.</p>
+        </li>
+        <li>
+          <h2>Add pages</h2>
+          <p id="addHint">Use the toolbar button, right-click a page, or select text first to add just that part.</p>
+        </li>
+        <li>
+          <h2>Listen anywhere</h2>
+          <p id="playHint">Play from the toolbar button, or open the side panel to see the whole queue and follow along.</p>
+        </li>
+      </ol>
+      <p class="privacy-line">Everything you add stays in this browser. There’s no account and no server.</p>
+      <div class="welcome-actions">
+        <button class="btn btn-lg" id="finish" type="button">Done</button>
+        <a class="btn btn-quiet" href="options.html">Voice and settings</a>
+      </div>
+    </main>
+    <script type="module" src="../src/ui/welcome.js"></script>
+  </body>
+</html>
