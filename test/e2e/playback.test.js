@@ -290,6 +290,36 @@ test("mark as listened, mark as not listened and reordering", async () => {
   assert.deepEqual(order, [a.id, b.id, c.id]);
 });
 
+test("a 2.x queue migrates when the new version starts", async () => {
+  await app.control.evaluate(async () => {
+    await chrome.storage.local.clear();
+    await chrome.storage.local.set({
+      "queuetts:v2": {
+        version: 3,
+        settings: { voiceName: "", rate: 1.3, theme: "dark", dictionary: "nginx => engine x" },
+        playback: { itemId: "old1", status: "playing", segmentIndex: 4 },
+        queue: [
+          { id: "old1", title: "Kept article", text: "First paragraph here.\n\nSecond paragraph here.", state: "playing", sourceType: "page", sourceUrl: "https://example.com/a", capturedAt: 1 },
+          { id: "old2", title: "Broken capture", text: "", state: "failed", sourceType: "failed" },
+          { id: "old3", title: "Finished one", text: "Done text that was listened to.", state: "completed", sourceType: "paste", completedAt: 2 }
+        ]
+      }
+    });
+  });
+  await app.stopWorker();
+  await sleep(300);
+  await app.send("voices");
+  const stored = await app.storage(null);
+  assert.equal(stored["queuetts:v2"], undefined, "legacy key removed");
+  assert.equal(stored.schema, 3);
+  assert.deepEqual(stored.queue.items.map((entry) => [entry.id, entry.status]), [["old1", "queued"], ["old3", "done"]]);
+  assert.equal(stored["doc:old1"].blocks.length, 2);
+  assert.equal(stored.settings.rate, 1.3);
+  assert.equal(stored.settings.theme, "dark");
+  assert.deepEqual(stored.settings.pronunciations, [{ from: "nginx", to: "engine x" }]);
+  assert.notEqual(stored.player?.status, "playing");
+});
+
 test("volume and pitch of zero are kept", async () => {
   await app.send("settings", { volume: 0, pitch: 0 });
   const { settings } = await app.storage("settings");

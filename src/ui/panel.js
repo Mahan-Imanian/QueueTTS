@@ -39,6 +39,7 @@ let readerKey = "";
 let readerNow = null;
 let userScrolledAt = 0;
 let dragId = "";
+let lastRendered = { itemId: "", status: "" };
 
 const matches = (item) => !query || `${item.title} ${item.site} ${item.url} ${item.excerpt}`.toLowerCase().includes(query);
 
@@ -449,10 +450,17 @@ function render(changed = new Set(["player", "queue", "settings", "stats", "heal
   store = snapshot;
   applyTheme(store.settings);
   player.update(store, changed);
-  if (changed.has("queue") || changed.has("settings") || changed.has("player")) {
+  const playerOnly = changed.has("player") && !changed.has("queue") && !changed.has("settings");
+  const sameItem = lastRendered.itemId === store.player.itemId && lastRendered.status === store.player.status;
+  if (playerOnly && sameItem && !query) {
+    const row = store.player.itemId && els.queueList.querySelector(`[data-key="${CSS.escape(store.player.itemId)}"]`);
+    const item = row && findItem(store.queue, store.player.itemId);
+    if (item) updateRow(row, item, 0, "queue");
+  } else if (changed.has("queue") || changed.has("settings") || changed.has("player")) {
     renderQueue();
     if (changed.has("queue") || changed.has("settings")) renderHistory();
   }
+  lastRendered = { itemId: store.player.itemId, status: store.player.status };
   if (changed.has("stats")) renderHistory();
   if (changed.has("health")) renderHealth();
   if (view === "reader" && (changed.has("player") || changed.has("queue") || changed.has("settings"))) renderReader();

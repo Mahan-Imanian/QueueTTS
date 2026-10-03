@@ -633,3 +633,49 @@ body.panel {
   margin: 0;
   color: var(--ink-2);
 }
+
+.rows-full .row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 48px;
+}
+
+.np-controls {
+  flex-wrap: wrap;
+  row-gap: var(--s-2);
+}
+
+@media (max-width: 340px) {
+  .np-transport {
+    gap: var(--s-1);
+  }
+  .np-tools {
+    margin-left: auto;
+  }
+}
+
+.popup .np {
+  gap: var(--s-2);
+  padding-bottom: var(--s-3);
+}
+
+.popup .np-sentence {
+  min-height: 0;
+  -webkit-line-clamp: 2;
+}
+
+.popup .row {
+  min-height: 42px;
+}
+
+.popup .row-main {
+  min-height: 40px;
+}
+
+.popup .page {
+  gap: var(--s-2);
+  margin: var(--s-1) var(--s-3);
+}
+
+.popup .next {
+  padding-top: var(--s-1);
+}
