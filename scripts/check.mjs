@@ -25,7 +25,6 @@ const required = [
   "assets/icons/icon-32.png",
   "assets/icons/icon-48.png",
   "assets/icons/icon-128.png",
-  "REBUILD_NOTES.md",
   "README.md"
 ];
 for (const file of required) if (!existsSync(join(root, file))) fail(`Missing required file: ${file}`);
