@@ -12,8 +12,9 @@
   const citation = /\[(?:\d+(?:\s*[,–-]\s*\d+)*|[a-z]|note \d+|citation needed|clarification needed|edit)\]/gi;
 
   const visible = (element) => {
-    if (typeof element.checkVisibility === "function") return element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
     const style = getComputedStyle(element);
+    if (style.display === "contents") return element.parentElement ? visible(element.parentElement) : true;
+    if (typeof element.checkVisibility === "function") return element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
     return style.display !== "none" && style.visibility !== "hidden";
   };
 
@@ -233,9 +234,9 @@
     },
     {
       test: () => location.hostname === "developer.mozilla.org",
-      root: () => document.querySelector("main#content article.main-page-content") || document.querySelector(".main-page-content") || document.querySelector("main article"),
+      root: () => document.querySelector("main#content article.main-page-content") || document.querySelector(".main-page-content") || document.querySelector("main article") || document.querySelector("main#content"),
       title: () => document.querySelector("main h1")?.textContent,
-      skip: ".bc-data,.bc-table,.metadata,.last-modified-date,.document-toc-container,.on-github,.article-footer,.baseline-indicator,.copy-icon,.play-button,.interactive"
+      skip: ".bc-data,.bc-table,.metadata,.last-modified-date,.document-toc-container,.on-github,.article-footer,.baseline-indicator,.copy-icon,.play-button,.interactive,[class*='sidebar'],[class*='toc'],[class*='breadcrumb'],[class*='article-footer'],[class*='baseline'],[class*='compat'],mdn-dropdown,mdn-toggle-sidebar,mdn-copy-button,mdn-play-button,mdn-compat-table-lazy"
     }
   ];
 
@@ -326,6 +327,9 @@
     blocks = scrub(dropLeadingTitle(blocks, title));
     const total = countWords(blocks);
     if (total < 30) return { ok: false, reason: "empty", message: "There's no article text on this page to read." };
+    const headings = blocks.filter((block) => block.k === "h").length;
+    const prose = blocks.filter((block) => (block.k === "p" || block.k === "q") && words(block.t) >= 12).length;
+    if (total < 180 && headings >= prose) return { ok: false, reason: "listing", message: "This looks like a list of articles. Open the one you want, then add it." };
     return {
       ok: true,
       doc: {
