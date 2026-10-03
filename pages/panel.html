@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QueueTTS</title>
+    <link rel="stylesheet" href="../styles/ui.css" />
+    <link rel="stylesheet" href="../styles/surfaces.css" />
+  </head>
+  <body class="panel">
+    <header class="top">
+      <img class="mark" src="../assets/icons/mark.svg" alt="" width="20" height="20" />
+      <span class="brand">QueueTTS</span>
+      <button class="icon-btn" id="addMenu" type="button" aria-label="Add" title="Add"></button>
+      <button class="icon-btn" id="openSettings" type="button" aria-label="Settings" title="Settings"></button>
+    </header>
+    <div class="banner" id="health" hidden></div>
+    <section class="np np-sticky" id="player" aria-label="Now playing" hidden></section>
+    <div class="tabs"><div class="tablist" role="tablist" aria-label="Views">
+      <button role="tab" id="tab-queue" aria-controls="view-queue" aria-selected="true" type="button">Queue <span class="count" id="queueCount"></span></button>
+      <button role="tab" id="tab-history" aria-controls="view-history" aria-selected="false" tabindex="-1" type="button">History</button>
+      <button role="tab" id="tab-reader" aria-controls="view-reader" aria-selected="false" tabindex="-1" type="button">Reading</button>
+      </div>
+      <button class="icon-btn tab-search" id="searchToggle" type="button" aria-label="Search" title="Search (/)" aria-expanded="false"></button>
+    </div>
+    <div class="search" id="searchBar" hidden>
+      <label class="sr-only" for="search">Search titles and sites</label>
+      <input class="input" id="search" type="search" placeholder="Search titles and sites" autocomplete="off" />
+    </div>
+    <main>
+      <section id="view-queue" role="tabpanel" aria-labelledby="tab-queue" class="view">
+        <div class="empty" id="queueEmpty" hidden>
+          <h2>Your queue is empty</h2>
+          <p>Add an article and it will appear here, ready to play in order.</p>
+          <ul class="ways">
+            <li><span id="hintShortcut"></span></li>
+            <li>Right-click a page, then <strong>Add page to QueueTTS</strong></li>
+            <li>Select text first to add only that part</li>
+          </ul>
+          <button class="btn btn-primary btn-lg" id="emptyAdd" type="button"></button>
+        </div>
+        <p class="meta list-note" id="queueNote" hidden></p>
+        <ol class="rows rows-full" id="queueList" aria-label="Queue. Use arrow keys to move, Alt plus arrow keys to reorder, Delete to remove."></ol>
+      </section>
+      <section id="view-history" role="tabpanel" aria-labelledby="tab-history" class="view" hidden>
+        <div class="history-head">
+          <p class="meta" id="weekStats"></p>
+          <button class="btn btn-quiet" id="clearHistory" type="button">Clear history</button>
+        </div>
+        <div class="empty" id="historyEmpty" hidden>
+          <h2>Nothing listened to yet</h2>
+          <p>Finished items move here, so you can play them again later.</p>
+        </div>
+        <ol class="rows rows-full" id="historyList" aria-label="History"></ol>
+      </section>
+      <section id="view-reader" role="tabpanel" aria-labelledby="tab-reader" class="view" hidden>
+        <div class="empty" id="readerEmpty" hidden>
+          <h2>Nothing is playing</h2>
+          <p>Play something from your queue and its text appears here as it’s read.</p>
+        </div>
+        <article class="reader" id="reader" aria-label="Text of the current item"></article>
+      </section>
+    </main>
+    <dialog id="pasteDialog" aria-labelledby="pasteHeading">
+      <form method="dialog" class="dialog-body">
+        <h2 id="pasteHeading">Paste text</h2>
+        <label class="sr-only" for="pasteText">Text to add</label>
+        <textarea class="textarea" id="pasteText" rows="9" placeholder="Paste anything you want to listen to"></textarea>
+        <div class="dialog-actions">
+          <span class="meta" id="pasteCount"></span>
+          <button class="btn btn-quiet" value="cancel" type="submit">Cancel</button>
+          <button class="btn btn-primary" id="pasteAdd" value="add" type="submit" disabled>Add to queue</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="keysDialog" aria-labelledby="keysHeading">
+      <div class="dialog-body">
+        <h2 id="keysHeading">Keyboard shortcuts</h2>
+        <dl class="keys">
+          <dt><kbd>Space</kbd></dt><dd>Play or pause</dd>
+          <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Back or forward one sentence</dd>
+          <dt><kbd>N</kbd></dt><dd>Skip to the next item</dd>
+          <dt><kbd>−</kbd> <kbd>+</kbd></dt><dd>Slower or faster</dd>
+          <dt><kbd>/</kbd></dt><dd>Search</dd>
+          <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>Queue, History, Reading</dd>
+          <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Move through the list</dd>
+          <dt><kbd>Alt</kbd> + <kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Reorder the selected item</dd>
+          <dt><kbd>Enter</kbd></dt><dd>Play the selected item</dd>
+          <dt><kbd>Delete</kbd></dt><dd>Remove the selected item</dd>
+        </dl>
+        <p class="meta" id="globalKeys"></p>
+        <div class="dialog-actions"><button class="btn" type="button" id="keysClose">Close</button></div>
+      </div>
+    </dialog>
+    <script type="module" src="../src/ui/panel.js"></script>
+  </body>
+</html>

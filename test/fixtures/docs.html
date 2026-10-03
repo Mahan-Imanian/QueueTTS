@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Configuring retries | Relay Docs</title><meta property="og:site_name" content="Relay Docs"></head><body>
+<a class="skip-link" href="#main">Skip to content</a>
+<nav class="navbar"><a class="navbar__brand">Relay</a><a>Docs</a><a>API</a><a>Blog</a><a>GitHub</a><button aria-label="Switch between dark and light mode">Theme</button></nav>
+<div class="docs-wrapper"><aside class="theme-doc-sidebar-container"><nav class="menu"><ul><li>Getting started</li><li>Configuring retries</li><li>Deploying</li><li>Monitoring</li></ul></nav></aside>
+<main id="main" class="docMainContainer"><div class="row"><div class="col docItemCol"><nav aria-label="Breadcrumbs" class="breadcrumbs">Docs › Guides › Configuring retries</nav>
+<article><div class="theme-doc-markdown markdown"><header><h1>Configuring retries</h1></header>
+<p>Relay retries failed deliveries automatically. This guide explains the defaults and how to change them for a single queue or for the whole project.</p>
+<h2 id="defaults">Defaults<a class="hash-link" href="#defaults" aria-label="Direct link to Defaults">​</a></h2>
+<p>A failed message is retried five times, with the delay doubling after each attempt. After the last attempt the message moves to the dead letter queue, where it stays for seven days.</p>
+<div class="admonition admonition-tip"><div class="admonition-heading"><h5>tip</h5></div><div class="admonition-content"><p>Keep retry counts low for messages that trigger payments or emails.</p></div></div>
+<h2 id="per-queue">Per-queue settings<a class="hash-link" href="#per-queue">​</a></h2>
+<p>Set <code>retries</code> and <code>backoff</code> in the queue definition. Values set on a queue override the project defaults.</p>
+<pre><code>queues:
+  billing:
+    retries: 2
+    backoff: linear</code></pre>
+<p>Changes take effect for new messages only. Messages already waiting keep the settings they were created with.</p>
+</div></article>
+<div class="theme-doc-footer"><a class="theme-edit-this-page" href="#">Edit this page</a><span class="theme-last-updated">Last updated on Feb 2, 2026</span></div>
+<nav class="pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link--prev"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Getting started</div></a><a class="pagination-nav__link--next"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Deploying</div></a></nav>
+<div class="feedback"><p>Was this page helpful?</p><button>Yes</button><button>No</button></div>
+</div><div class="col col--3"><div class="tableOfContents"><ul><li>Defaults</li><li>Per-queue settings</li></ul></div></div></div></main></div>
+<footer class="footer">Copyright © 2026 Relay, Inc.</footer>
+</body></html>

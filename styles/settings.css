@@ -1,0 +1,225 @@
+.settings-top {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--s-8) var(--s-6) var(--s-4);
+}
+
+.settings-top .mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.settings-top h1 {
+  font-size: var(--t-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.saved {
+  margin-left: auto;
+}
+
+.settings-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 var(--s-6) 80px;
+}
+
+.settings-main section {
+  padding: var(--s-6) 0;
+  border-top: 1px solid var(--line);
+}
+
+.settings-main h2 {
+  margin-bottom: var(--s-3);
+  font-size: var(--t-lg);
+  font-weight: 600;
+}
+
+.section-note {
+  margin-bottom: var(--s-3);
+  color: var(--ink-2);
+}
+
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-6);
+  padding: var(--s-3) 0;
+}
+
+.setting + .setting {
+  border-top: 1px solid var(--line);
+}
+
+.setting-text {
+  display: grid;
+  gap: 2px;
+  max-width: 420px;
+}
+
+.voice-pick {
+  display: flex;
+  gap: var(--s-2);
+  width: min(340px, 50%);
+}
+
+.voice-pick .select {
+  min-width: 0;
+}
+
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: min(300px, 50%);
+}
+
+.range-row output {
+  min-width: 42px;
+  text-align: right;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+}
+
+.segmented label {
+  position: relative;
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+}
+
+.segmented span {
+  display: block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: background var(--d-1) var(--ease), color var(--d-1) var(--ease);
+}
+
+.segmented input:checked + span {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--signal);
+  outline-offset: 1px;
+}
+
+.shortcut-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--s-2) var(--s-5);
+  margin: 0 0 var(--s-4);
+}
+
+.shortcut-list dd {
+  margin: 0;
+}
+
+.pron-list {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 var(--s-3);
+  padding: 0;
+  list-style: none;
+}
+
+.pron {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto auto;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 36px;
+  padding: 0 0 0 var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.pron-from {
+  font-weight: 600;
+}
+
+.pron-arrow {
+  color: var(--ink-3);
+}
+
+.pron-add {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--s-2);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.privacy {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding-left: var(--s-5);
+  color: var(--ink-2);
+  max-width: 600px;
+}
+
+.dialog-body {
+  display: grid;
+  gap: var(--s-3);
+  width: min(440px, calc(100vw - 32px));
+  padding: var(--s-5);
+}
+
+.dialog-body h2 {
+  font-size: var(--t-lg);
+  font-weight: 600;
+}
+
+.dialog-body p {
+  color: var(--ink-2);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+
+@media (max-width: 600px) {
+  .settings-top,
+  .settings-main {
+    padding-left: var(--s-4);
+    padding-right: var(--s-4);
+  }
+  .setting {
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+  .voice-pick,
+  .range-row {
+    width: 100%;
+  }
+  .pron-add {
+    grid-template-columns: 1fr;
+  }
+}
