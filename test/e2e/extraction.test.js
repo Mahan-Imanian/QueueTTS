@@ -48,6 +48,13 @@ test("MDN: reads the reference page, keeps code as code, drops chrome and compat
   assert.ok(!doc.blocks.some((block) => block.k === "h" && /Specifications|Browser compatibility/.test(block.t)), "empty sections are dropped");
 });
 
+test("MDN (2025 layout): content inside a display:contents <main> is not mistaken for hidden text", async () => {
+  const { item, text } = await capture("https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisUtterance", "mdn-2025.html");
+  assert.equal(item.title, "SpeechSynthesisUtterance");
+  contains(text, ["represents a speech request", "Listen to the boundary event"]);
+  excludes(text, ["Log in", "Chrome 33", "In this article", "Baseline", "blueprint", "Web Speech API\nSpeechSynthesis"]);
+});
+
 test("GitHub: README content, not the repository chrome", async () => {
   const { item, text, doc } = await capture("https://github.com/acme/nightline", "github.html");
   assert.equal(item.title, "nightline");
@@ -102,6 +109,13 @@ test("A page with no article text fails honestly and adds nothing", async () => 
   assert.equal(result.ok, false);
   assert.match(result.message, /no article text/i);
   assert.equal((await app.queue()).length, before);
+});
+
+test("A section front full of headlines is declined instead of read as headline soup", async () => {
+  const { result } = await capture("https://ledger.example/technology", "front.html");
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, "listing");
+  assert.match(result.message, /list of articles/);
 });
 
 test("Selected text keeps its paragraphs and gets a readable title", async () => {

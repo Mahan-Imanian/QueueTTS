@@ -1,102 +1,106 @@
 # QueueTTS
 
-Save articles, selections and pasted text to a queue in Chrome, then listen to them later with your computer's text-to-speech voices. No account, no server. The queue lives in your browser's local storage.
+A listen-later queue for Chrome. Add articles and selected text as you find them, and QueueTTS reads them to you in order with your computer's voices, picking up from the sentence where you stopped. There's no account and no server: the queue lives in your browser.
 
-![QueueTTS popup open over a news article, with a paragraph selected and ready to queue while another article plays](assets/readme/popup.png)
+![QueueTTS popup over a news article: one article is playing, a selected paragraph is ready to add, and three more items are up next](assets/readme/popup.png)
 
-## What it does
+## How it works
 
-You find something worth reading but don't have time to read it. Select a paragraph or capture the whole page, and it goes into the queue. When you're ready, press play and QueueTTS reads it aloud sentence by sentence, then moves on to the next item.
+Press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> on an article (or use the toolbar button or the right-click menu). QueueTTS pulls out the article itself, leaving behind navigation, cookie banners, share buttons, newsletter boxes, comments, citation markers and anything hidden on the page. If you select text first, only the selection is added.
 
-Page capture strips navigation, cookie banners, share buttons, newsletter boxes and comment threads before anything is queued. If a page doesn't yield enough readable text (a dashboard, a login wall), the item is flagged so you can paste the text in yourself.
+New items go to the end of the queue. Playing one never interrupts what you're listening to. When an article finishes it moves to History and the next one starts. Pause for a minute or a week, even across a Chrome restart, and playback resumes from the sentence you stopped on.
 
-![The QueueTTS side panel docked next to an article, showing the current sentence, playback controls and capture options](assets/readme/side-panel.png)
+The side panel shows the whole queue in order and the text being read, with the current sentence highlighted. Click any sentence to jump to it.
+
+![The QueueTTS side panel next to an article, following along in the Reading view with the current sentence highlighted](assets/readme/side-panel.png)
 
 ## Install
 
-QueueTTS is not on the Chrome Web Store yet. To run it from source:
+QueueTTS is not on the Chrome Web Store yet.
 
 1. Download or clone this repository.
 2. Open `chrome://extensions` and turn on **Developer mode**.
 3. Click **Load unpacked** and choose the repository folder.
-4. Pin QueueTTS from the puzzle-piece menu so the icon stays in the toolbar.
+4. A welcome page opens. Press **Hear how it works** to hear a short sample.
 
-It needs Chrome 116 or later. There is no build step and nothing to `npm install`.
+It needs Chrome 116 or later. There is no build step.
 
-## Using it
+## Shortcuts
 
-| To | Do this |
+These work in any tab and can be changed at `chrome://extensions/shortcuts`.
+
+| Shortcut | Action |
 |---|---|
-| Queue a selection | Select text, right-click, **Add selected text to QueueTTS**. Or open the popup and press **Add selected text**. |
-| Queue a whole page | Right-click the page, **Add current page to QueueTTS**. Or use **Add this page** in the popup. |
-| Queue text from anywhere | Open the popup, press **Paste**, paste, then **Add to queue** (or Ctrl+Enter). |
-| Play, pause, skip | The popup works as a remote. The side panel shows the full queue and the sentence being read. |
-| Change the voice or speed | Settings (gear icon). Rate goes from 0.5× to 3×. |
-| Stop after a while | Pick a sleep timer in the side panel. |
+| <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> | Add this page, or the selected text |
+| <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> | Play or pause |
+| <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>Q</kbd> | Open QueueTTS |
 
-### Keyboard
+You can also assign keys for skipping a sentence forward or back.
 
-In the side panel:
+Inside the popup and side panel:
 
 | Key | Action |
 |---|---|
-| Space | Play or pause |
-| J / K | Next / previous sentence |
-| N / P | Next / previous item |
-| / | Search the queue |
-| F | Focus view |
-| Ctrl+K | Command menu |
-
-In the popup, Space plays or pauses, P opens the paste box and Q opens the full queue.
+| <kbd>Space</kbd> | Play or pause |
+| <kbd>←</kbd> <kbd>→</kbd> | Back or forward one sentence |
+| <kbd>−</kbd> <kbd>+</kbd> | Slower or faster |
+| <kbd>N</kbd> | Skip to the next item |
+| <kbd>/</kbd> | Search the queue |
+| <kbd>↑</kbd> <kbd>↓</kbd>, <kbd>Enter</kbd>, <kbd>Delete</kbd> | Move through the queue, play, remove (with undo) |
+| <kbd>Alt</kbd>+<kbd>↑</kbd> <kbd>↓</kbd> | Reorder the selected item |
+| <kbd>?</kbd> | Show all shortcuts |
 
 ## Privacy
 
-Captured text, the queue and your settings are stored with `chrome.storage.local` on your computer. QueueTTS has no backend, no analytics and no account.
+- Your queue, the text of everything you add, and your settings are stored in `chrome.storage.local` in your browser profile.
+- QueueTTS makes no network requests of its own and has no analytics. The build check fails if any `fetch`, `XMLHttpRequest`, WebSocket or beacon call appears in the code.
+- Pages are read only when you add them. QueueTTS uses `activeTab` and has no access to sites in general.
+- Voices that run on your computer (such as *Microsoft Zira* on Windows) keep everything local. Voices named "Google …" are online voices: Chrome sends the text being spoken to Google. They are off by default, labelled in Settings, and only used if you turn on **Allow online voices**.
 
-Speech goes through Chrome's text-to-speech API. Voices installed on your operating system (for example *Microsoft Zira* on Windows) run locally. Voices whose names start with **Google** are network voices, so Chrome sends the text being spoken to Google. If that matters to you, pick a local voice in Settings.
-
-The extension reads a page only when you ask it to capture something. It uses `activeTab` rather than access to all sites.
-
-| Permission | Used for |
+| Permission | Why |
 |---|---|
-| `activeTab`, `scripting` | Reading the current page when you capture it |
-| `storage` | Saving the queue and settings |
-| `tts` | Speaking |
-| `contextMenus` | The right-click capture items |
-| `sidePanel` | The full queue view |
-| `alarms` | The sleep timer |
+| `activeTab`, `scripting` | Read the current page when you add it |
+| `storage`, `unlimitedStorage` | Keep a large queue without hitting Chrome's 10 MB limit |
+| `tts` | Speak |
+| `contextMenus` | The right-click items |
+| `sidePanel` | The queue view beside the page |
+| `alarms` | The sleep timer, and recovering playback if Chrome suspends the extension mid-sentence |
+| `favicon` | Show site icons from Chrome's own cache, without fetching them |
 
-## Status
+## Known limitations
 
-QueueTTS is early and has known problems. The most important ones:
-
-- Capturing something new while audio is playing can stop playback.
-- Resuming after a pause of more than about 30 seconds can stall, because Chrome suspends the extension's background worker.
-- Some sites capture poorly. MDN and GitHub pages currently come back empty, and Wikipedia includes its reference list.
-- Short lines without end punctuation are sometimes read with a spoken "Heading." cue. Set **Headings** to *Pause after heading* in Settings to avoid it.
-- The light theme is not finished.
-
-The full review, with reproduction steps, screenshots and a fix plan, is in [docs/audit/AUDIT.md](docs/audit/AUDIT.md).
+- Voices are whatever your operating system and Chrome provide. On Windows the local voices sound robotic. The natural voices in Chrome's Reading mode aren't available to extensions.
+- The highlight follows along in the side panel, not on the original web page.
+- PDFs aren't supported yet. Select the text and use **Paste text** instead.
+- Pages that need a login, and pages that are mostly lists of links, are declined with a message rather than read.
 
 ## Development
 
-Plain JavaScript modules, no framework, no dependencies.
+Plain JavaScript modules with no runtime dependencies. Page extraction uses [Mozilla Readability](https://github.com/mozilla/readability), vendored into `src/vendor` so the extension loads unpacked.
 
 ```
-manifest.json        MV3 manifest
-src/background.js    service worker: capture, queue playback, context menus, sleep timer
-src/content.js       page and selection extraction, injected only on capture
-src/shared.js        storage, text cleanup, sentence splitting, time estimates
-src/popup.js         toolbar popup
-src/sidepanel.js     full queue view
-src/options.js       settings page
-pages/, styles/      HTML and CSS for the three surfaces
+src/background/index.js   service worker: the playback controller, queue, capture, commands, recovery
+src/content/extract.js    page and selection extraction into typed blocks
+src/lib/                  text segmentation and speech clean-up, queue operations, storage
+src/ui/                   popup, side panel, settings and welcome page
+styles/ui.css             design tokens and shared components
+test/unit, test/e2e       unit tests and real-Chrome end-to-end tests
 ```
 
-Run the checks (manifest shape, file references, syntax):
+```bash
+npm install
+```
 
 ```bash
 npm run check
 ```
 
-After editing, reload the extension from `chrome://extensions`.
+```bash
+npm test
+```
+
+```bash
+npm run test:e2e
+```
+
+The end-to-end tests load the extension into your installed Chrome (set `CHROME_PATH` if it's somewhere unusual) and need at least one local text-to-speech voice. `node test/perf/bench.mjs` measures capture, rendering and playback at 10 to 1,000 queued articles.
