@@ -16,16 +16,12 @@
     <main class="settings-main">
       <section aria-labelledby="voiceHeading">
         <h2 id="voiceHeading">Voice</h2>
-        <div class="setting">
-          <div class="setting-text">
-            <label class="field-label" for="voice">Voice</label>
-            <p class="field-hint" id="voiceHint">Automatic picks the best voice on this computer for each article’s language.</p>
-          </div>
-          <div class="voice-pick">
-            <select class="select" id="voice"></select>
-            <button class="btn" id="preview" type="button"></button>
-          </div>
+        <p class="section-note">QueueTTS remembers a voice for each language and uses it for every article in that language. Chrome supplies the voices; their quality depends on your system.</p>
+        <div class="voice-lang">
+          <label class="field-label" for="voiceLang">Language</label>
+          <select class="select" id="voiceLang"></select>
         </div>
+        <div class="voice-list" id="voiceList" role="radiogroup" aria-label="Voice for this language"></div>
         <div class="setting">
           <div class="setting-text">
             <label class="field-label" for="network">Allow online voices</label>
@@ -124,6 +120,19 @@
           <li>A page is read only when you add it: through the toolbar button, the right-click menu or your shortcut.</li>
           <li id="voicePrivacy"></li>
         </ul>
+      </section>
+
+      <section aria-labelledby="aboutHeading" class="about">
+        <h2 id="aboutHeading">About</h2>
+        <div class="about-id">
+          <img class="about-mark" src="../assets/icons/mark.svg" alt="" width="44" height="44" />
+          <div>
+            <p class="about-name">QueueTTS <span class="meta" id="version"></span></p>
+            <p class="about-line">A private listen-later queue for the web.</p>
+          </div>
+        </div>
+        <dl class="diagnostics" id="diagnostics"></dl>
+        <p class="about-links"><a href="https://github.com/Mahan-Imanian/QueueTTS" target="_blank" rel="noopener">Source code and issues on GitHub</a> · Article extraction uses <a href="https://github.com/mozilla/readability" target="_blank" rel="noopener">Mozilla Readability</a> (Apache License 2.0)</p>
       </section>
     </main>
     <dialog id="confirm" aria-labelledby="confirmTitle">

@@ -1,6 +1,7 @@
 import { addItem, clearHistory, findByUrl, findItem, markDone, markUnplayed, mergeQueues, moveQueued, moveToFront, nextAfter, queuedItems, removeItem, updateItem } from "../lib/queue.js";
 import { blocksFromText, defaultPlayer, docKey, KEYS, LEGACY_KEY, metaFromDoc, migrateLegacy, normalizeQueue, normalizeSettings, readAll, readDoc, SCHEMA, StorageError, write } from "../lib/store.js";
 import { buildPlan, canonicalUrl, localDay, progressAt, toSpeech, unitIndex } from "../lib/text.js";
+import { pickVoice, preferredVoiceName } from "../lib/voices.js";
 
 const MENU_PAGE = "qtts-page";
 const MENU_SELECTION = "qtts-selection";
@@ -13,7 +14,22 @@ const ACTIVE = new Set(["playing", "preparing", "recovering"]);
 const tts = () => globalThis.__qttsTTS || chrome.tts;
 
 let state = null;
-const runtime = { token: 0, plan: null, planKey: "", index: -1, unitStartedAt: 0, pendingMs: 0, lastFlush: 0, pauseTimer: 0, voiceFallback: false, ports: new Set(), voices: null };
+const runtime = { token: 0, plan: null, planKey: "", index: -1, unitStartedAt: 0, pendingMs: 0, lastFlush: 0, pauseTimer: 0, voiceFallback: false, ports: new Set(), voices: null, trace: null, audioWarmUntil: 0, engineWarmAt: 0, voiceHasWords: true, confirmTimer: 0 };
+
+const startTrace = (reason) => {
+  runtime.trace = { reason, at: Date.now(), t0: performance.now(), marks: [], done: false };
+};
+
+const mark = (name, extra = {}) => {
+  const trace = runtime.trace;
+  if (!trace || trace.done) return;
+  trace.marks.push({ name, ms: Math.round((performance.now() - trace.t0) * 10) / 10, ...extra });
+  if (name === "first word" || name === "error") {
+    trace.done = true;
+    const { t0, ...saved } = trace;
+    chrome.storage.session.set({ lastStart: saved }).catch(() => {});
+  }
+};
 
 let chain = Promise.resolve();
 const exclusive = (task) => {
@@ -94,6 +110,52 @@ const updateBadge = () => {
   chrome.action.setTitle({ title: playing ? `QueueTTS · Playing “${currentItem()?.title || ""}”` : count ? `QueueTTS · ${count} in queue` : "QueueTTS" }).catch(() => {});
 };
 
+const AUDIO_DOCUMENT = "pages/audio.html";
+const AUDIO_WARM_MS = 90000;
+let audioCreating = null;
+
+const ensureAudioDocument = async () => {
+  if (!chrome.offscreen?.createDocument) return false;
+  const existing = await chrome.runtime.getContexts?.({ contextTypes: ["OFFSCREEN_DOCUMENT"] }).catch(() => []);
+  if (existing?.length) return true;
+  audioCreating ||= chrome.offscreen.createDocument({
+    url: AUDIO_DOCUMENT,
+    reasons: ["AUDIO_PLAYBACK"],
+    justification: "Keeps the audio output awake so the first words of speech are not cut off."
+  }).catch((error) => {
+    if (!/single offscreen|already/i.test(String(error?.message || error))) throw error;
+  }).finally(() => {
+    audioCreating = null;
+  });
+  await audioCreating;
+  return true;
+};
+
+const warmAudio = async (ms = AUDIO_WARM_MS) => {
+  const wasWarm = Date.now() < runtime.audioWarmUntil;
+  runtime.audioWarmUntil = Date.now() + ms;
+  try {
+    if (!(await ensureAudioDocument())) return { wasWarm, running: false };
+    const status = await chrome.runtime.sendMessage({ target: "qtts-audio", action: "warm", ms });
+    return { wasWarm, ...(status || {}) };
+  } catch {
+    return { wasWarm, running: false };
+  }
+};
+
+const warmEngine = async () => {
+  if (!state || ACTIVE.has(state.player.status) || Date.now() - runtime.engineWarmAt < 45000) return;
+  const item = currentItem() || queuedItems(state.queue)[0];
+  const voice = await resolveVoice(item?.lang);
+  if (ACTIVE.has(state.player.status)) return;
+  runtime.engineWarmAt = Date.now();
+  const options = { volume: 0, enqueue: false, onEvent: () => {} };
+  if (voice) options.voiceName = voice.voiceName;
+  try {
+    tts().speak(".", options, () => void chrome.runtime.lastError);
+  } catch {}
+};
+
 const getVoices = () => new Promise((resolve) => {
   try {
     tts().getVoices((voices) => resolve(Array.isArray(voices) ? voices : []));
@@ -102,21 +164,15 @@ const getVoices = () => new Promise((resolve) => {
   }
 });
 
-const rankVoice = (voice) => (/natural|neural|enhanced|premium|online/i.test(voice.voiceName) ? 0 : 1);
-
 const resolveVoice = async (lang) => {
-  runtime.voices ||= await getVoices();
-  const voices = runtime.voices;
-  const { voice, allowNetworkVoices } = state.settings;
-  if (voice && !runtime.voiceFallback) {
-    const chosen = voices.find((entry) => entry.voiceName === voice);
-    if (chosen && (!chosen.remote || allowNetworkVoices)) return chosen;
+  const wanted = preferredVoiceName(state.settings, lang);
+  const stale = wanted && !runtime.voices?.some((voice) => voice.voiceName === wanted) && Date.now() - (runtime.voicesAt || 0) > 3000;
+  if (!runtime.voices?.length || stale) {
+    runtime.voices = await getVoices();
+    runtime.voicesAt = Date.now();
   }
-  const usable = voices.filter((entry) => !entry.remote || allowNetworkVoices);
-  const base = (lang || "en").toLowerCase().split("-")[0];
-  const matching = usable.filter((entry) => (entry.lang || "").toLowerCase().split("-")[0] === base);
-  const pool = matching.length ? matching : usable;
-  return [...pool].sort((a, b) => Number(a.remote) - Number(b.remote) || rankVoice(a) - rankVoice(b))[0] || null;
+  const settings = runtime.voiceFallback ? { ...state.settings, voices: {} } : state.settings;
+  return pickVoice(runtime.voices, settings, lang || "en").voice;
 };
 
 const planKey = (item) => `${item.id}|${state.settings.readCode}|${state.settings.announceHeadings}`;
@@ -160,6 +216,7 @@ const flushListening = async (force = false) => {
 const stopSpeech = () => {
   runtime.token += 1;
   clearTimeout(runtime.pauseTimer);
+  clearTimeout(runtime.confirmTimer);
   if (runtime.unitStartedAt) runtime.pendingMs += Date.now() - runtime.unitStartedAt;
   runtime.unitStartedAt = 0;
   try {
@@ -199,9 +256,11 @@ const speakUnit = async (index, token) => {
   if (index >= plan.units.length) return finishItem();
   const unit = plan.units[index];
   runtime.index = index;
-  const spoken = `${unit.lead}${toSpeech(unit.text, state.settings.pronunciations)}`;
+  const spoken = `${unit.lead}${toSpeech(unit.text, state.settings.pronunciations, { lang: item.lang || "en", close: unit.close })}`;
   if (!spoken.replace(/[^\p{L}\p{N}]/gu, "")) return speakUnit(index + 1, token);
   const voice = await resolveVoice(item.lang);
+  mark("voice ready", { voice: voice?.voiceName || "default", remote: Boolean(voice?.remote) });
+  runtime.voiceHasWords = !voice || !Array.isArray(voice.eventTypes) || voice.eventTypes.includes("word");
   if (token !== runtime.token) return;
   const options = {
     rate: state.settings.rate,
@@ -215,8 +274,10 @@ const speakUnit = async (index, token) => {
   if (item.lang) options.lang = item.lang;
   const go = () => {
     if (token !== runtime.token) return;
+    mark("speak called", { text: spoken.slice(0, 40) });
     try {
       tts().speak(spoken, options, () => {
+        mark("engine accepted");
         const error = chrome.runtime.lastError;
         if (error) exclusive(() => token === runtime.token && onSpeechError(error.message, token, index));
       });
@@ -230,12 +291,18 @@ const speakUnit = async (index, token) => {
 
 const onSpeechError = async (message, token, index) => {
   if (token !== runtime.token) return;
-  if (state.settings.voice && !runtime.voiceFallback) {
+  if (preferredVoiceName(state.settings, currentItem()?.lang) && !runtime.voiceFallback) {
     runtime.voiceFallback = true;
     runtime.token += 1;
     return speakUnit(index, runtime.token);
   }
   return fail(message ? `Speech failed: ${message}` : "Speech failed. Try another voice in Settings.");
+};
+
+const confirmPlaying = async (token) => {
+  clearTimeout(runtime.confirmTimer);
+  if (token !== runtime.token || state.player.status === "playing" || !ACTIVE.has(state.player.status)) return;
+  await setPlayer({ status: "playing" }).catch(() => {});
 };
 
 const onSpeechEvent = async (event, token, index, spoken) => {
@@ -245,18 +312,29 @@ const onSpeechEvent = async (event, token, index, spoken) => {
   if (!plan || !item) return;
   const unit = plan.units[index];
   if (event.type === "start") {
+    mark("start event", { charIndex: event.charIndex ?? 0 });
     runtime.unitStartedAt = Date.now();
-    state.player = { ...state.player, status: "playing", error: "", pos: { b: unit.b, s: unit.s }, progress: progressAt(plan, index), updatedAt: Date.now() };
+    const audible = state.player.status === "playing" || !runtime.voiceHasWords;
+    state.player = { ...state.player, status: audible ? "playing" : state.player.status, error: "", pos: { b: unit.b, s: unit.s }, progress: progressAt(plan, index), updatedAt: Date.now() };
     broadcast({ t: "unit", id: item.id, b: unit.b, s: unit.s });
     await savePlayer().catch(() => {});
+    syncWatchdog();
     updateBadge();
+    if (!audible) {
+      clearTimeout(runtime.confirmTimer);
+      runtime.confirmTimer = setTimeout(() => exclusive(() => confirmPlaying(token)), 900);
+    }
+    if (runtime.audioWarmUntil - Date.now() < AUDIO_WARM_MS / 2) warmAudio();
     return;
   }
   if (event.type === "word") {
+    mark("first word", { charIndex: event.charIndex });
+    if (state.player.status !== "playing") await confirmPlaying(token);
     broadcast({ t: "word", id: item.id, b: unit.b, s: unit.s, c: event.charIndex, n: event.length || 0, spoken });
     return;
   }
   if (event.type === "end") {
+    if (state.player.status !== "playing") await confirmPlaying(token);
     if (runtime.unitStartedAt) {
       const elapsed = Date.now() - runtime.unitStartedAt;
       runtime.pendingMs += elapsed;
@@ -282,8 +360,16 @@ const speakCurrent = async ({ recovering = false } = {}) => {
   const token = runtime.token;
   const item = currentItem();
   if (!item) return setPlayer({ status: state.queue.items.some((entry) => entry.status === "queued") ? "paused" : "idle", itemId: queuedItems(state.queue)[0]?.id || "", pos: null });
+  if (!runtime.trace || runtime.trace.done) startTrace(recovering ? "recover" : "advance");
+  mark("previous speech stopped");
+  const audio = warmAudio();
   await setPlayer({ status: recovering ? "recovering" : "preparing", error: "" });
+  mark("state saved");
+  const cached = runtime.planKey === planKey(item);
   const plan = await loadPlan(item);
+  mark("text ready", { cached, units: plan?.units.length || 0 });
+  const path = await Promise.race([audio, new Promise((resolve) => setTimeout(() => resolve({ running: false, slow: true }), 800))]);
+  mark("audio path ready", { wasWarm: Boolean(path.wasWarm), running: Boolean(path.running) });
   if (token !== runtime.token) return;
   if (!plan || !plan.units.length) {
     state.queue = removeItem(state.queue, item.id);
@@ -297,7 +383,9 @@ const speakCurrent = async ({ recovering = false } = {}) => {
 };
 
 const play = async (itemId = "") => {
-  const target = itemId ? findItem(state.queue, itemId) : currentItem() || queuedItems(state.queue)[0];
+  startTrace("play");
+  mark("command");
+  const target =itemId ? findItem(state.queue, itemId) : currentItem() || queuedItems(state.queue)[0];
   if (!target) return { ok: false, message: "Your queue is empty." };
   if (target.id !== state.player.itemId) {
     stopSpeech();
@@ -554,12 +642,12 @@ const updateSettings = async (patch) => {
   const before = state.settings;
   state.settings = normalizeSettings({ ...before, ...patch });
   await saveSettings();
-  if (patch.voice !== undefined || patch.allowNetworkVoices !== undefined) {
+  if (patch.voices !== undefined || patch.allowNetworkVoices !== undefined) {
     runtime.voiceFallback = false;
     runtime.voices = null;
   }
   const replan = before.readCode !== state.settings.readCode || before.announceHeadings !== state.settings.announceHeadings;
-  const respeak = ["rate", "pitch", "volume", "voice", "allowNetworkVoices", "pronunciations"].some((key) => key in patch);
+  const respeak = ["rate", "pitch", "volume", "voices", "allowNetworkVoices", "pronunciations"].some((key) => key in patch);
   if (replan) runtime.planKey = "";
   if ((replan || respeak) && ACTIVE.has(state.player.status)) await speakCurrent();
   return { ok: true, settings: state.settings };
@@ -655,6 +743,11 @@ const commands = {
   settings: (patch) => updateSettings(patch || {}),
   sleep: (minutes) => setSleep(minutes),
   voices: async () => ({ ok: true, voices: (runtime.voices = await getVoices()) }),
+  diagnostics: async () => {
+    const { lastStart } = await chrome.storage.session.get("lastStart").catch(() => ({}));
+    const live = runtime.trace ? (({ t0, ...rest }) => rest)(runtime.trace) : null;
+    return { ok: true, lastStart: lastStart || null, live, voice: state.player.itemId ? (await resolveVoice(currentItem()?.lang))?.voiceName || "" : "" };
+  },
   resolvedVoice: async (lang) => ({ ok: true, voice: await resolveVoice(lang) }),
   importData: (payload) => importData(payload || {}),
   reset: resetAll,
@@ -737,6 +830,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== "ui") return;
   runtime.ports.add(port);
+  exclusive(async () => {
+    await boot;
+    if (!ACTIVE.has(state.player.status) && currentItem()) {
+      warmAudio(45000);
+      await warmEngine();
+    }
+  });
   port.onDisconnect.addListener(() => runtime.ports.delete(port));
 });
 
