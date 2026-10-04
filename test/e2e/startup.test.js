@@ -55,7 +55,7 @@ test("the first utterance starts at the first word of the article and is never c
   const worker = await recordingSpeech();
   const item = (await app.send("addText", "Opening words matter most. The second sentence follows.", "First words")).item;
   await app.send("play", item.id);
-  await app.waitFor(async () => (await app.player()).pos?.s === 1, { label: "second sentence" });
+  await app.waitFor(() => worker.evaluate(() => globalThis.__qttsTTS.log.filter((entry) => entry.type === "speak" && entry.text.length > 2).length >= 2), { label: "second sentence spoken" });
   const log = await worker.evaluate(() => globalThis.__qttsTTS.log);
   const isArticle = (entry) => entry.type === "speak" && entry.text.length > 2;
   const speaks = log.filter(isArticle);
