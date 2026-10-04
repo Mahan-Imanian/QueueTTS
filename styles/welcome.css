@@ -1,7 +1,11 @@
+body.welcome {
+  background: var(--paper);
+}
+
 .welcome-main {
-  max-width: 600px;
+  max-width: 620px;
   margin: 0 auto;
-  padding: 72px var(--s-6) 64px;
+  padding: 64px var(--s-6) 64px;
 }
 
 .welcome-brand {
@@ -20,13 +24,14 @@
 
 .welcome h1 {
   font-family: var(--font-read);
-  font-size: 40px;
+  font-size: 44px;
   font-weight: 600;
-  line-height: 1.12;
-  letter-spacing: -0.02em;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
 }
 
 .lede {
+  max-width: 520px;
   margin-top: var(--s-4);
   color: var(--ink-2);
   font-size: var(--t-lg);
@@ -37,11 +42,78 @@
   margin: var(--s-6) 0 var(--s-8);
 }
 
-.demo-player {
-  padding: var(--s-4);
+.demo-deck {
   border: 1px solid var(--line);
   border-radius: var(--r-md);
+}
+
+.voices {
+  margin-bottom: var(--s-8);
+}
+
+.voices h2,
+.steps h2 {
+  font-size: var(--t-lg);
+  font-weight: 600;
+}
+
+.section-lede {
+  margin: 2px 0 var(--s-3);
+  color: var(--ink-2);
+}
+
+.voice-choices {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.voice-choice {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: var(--s-3);
+  align-items: start;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
   background: var(--surface);
+  cursor: pointer;
+  transition: border-color var(--d-1) var(--ease), box-shadow var(--d-1) var(--ease);
+}
+
+.voice-choice:has(input:checked) {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.voice-choice:has(input:disabled) {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.voice-choice input {
+  margin: 3px 0 0;
+  accent-color: var(--signal);
+}
+
+.choice-body {
+  display: grid;
+  gap: 2px;
+}
+
+.choice-title {
+  font-weight: 600;
+}
+
+.choice-text {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: 1.45;
+}
+
+.choice-voice {
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: var(--t-xs);
 }
 
 .steps {
@@ -76,11 +148,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.steps h2 {
-  font-size: var(--t-lg);
-  font-weight: 600;
-}
-
 .steps p {
   margin-top: 2px;
   color: var(--ink-2);
@@ -93,12 +160,19 @@
   color: var(--ink-2);
 }
 
-.welcome-actions {
-  display: flex;
-  gap: var(--s-2);
-  margin-top: var(--s-5);
-}
-
 .welcome-actions a {
   text-decoration: none;
+}
+
+@media (max-width: 560px) {
+  .welcome h1 {
+    font-size: 34px;
+  }
+  .voice-choice {
+    grid-template-columns: 18px 1fr;
+  }
+  .voice-choice .btn {
+    grid-column: 2;
+    justify-self: start;
+  }
 }

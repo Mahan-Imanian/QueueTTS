@@ -1,6 +1,6 @@
 {
   "name": "queuetts-extension",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
   "type": "module",
   "description": "QueueTTS: a private listen-later queue for Chrome.",

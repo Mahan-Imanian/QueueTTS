@@ -63,14 +63,138 @@
   max-width: 420px;
 }
 
-.voice-pick {
+.voice-lang {
   display: flex;
-  gap: var(--s-2);
-  width: min(340px, 50%);
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-2);
 }
 
-.voice-pick .select {
+.voice-lang .select {
+  width: auto;
+  min-width: 200px;
+}
+
+.voice-list {
+  display: grid;
+  margin-bottom: var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.voice-row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: var(--s-3);
+  align-items: center;
+  min-height: 52px;
+  padding: var(--s-2) var(--s-3);
+  cursor: pointer;
+  transition: background var(--d-1) var(--ease);
+}
+
+.voice-row + .voice-row {
+  border-top: 1px solid var(--line);
+}
+
+.voice-row:hover {
+  background: var(--sunken);
+}
+
+.voice-row:has(input:checked) {
+  background: var(--signal-soft);
+}
+
+.voice-row input {
+  margin: 0;
+  accent-color: var(--signal);
+}
+
+.voice-row.muted .voice-label {
+  color: var(--ink-2);
+}
+
+.voice-text {
+  display: grid;
+  gap: 1px;
   min-width: 0;
+}
+
+.voice-label {
+  font-weight: 600;
+}
+
+.voice-detail {
+  color: var(--ink-2);
+  font-size: var(--t-xs);
+}
+
+.tier {
+  font-weight: 600;
+}
+
+.tier-online {
+  color: var(--signal);
+}
+
+.tier-enhanced {
+  color: var(--ink);
+}
+
+.voice-row .btn {
+  min-height: 28px;
+}
+
+.about-id {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+
+.about-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+}
+
+.about-name {
+  font-family: var(--font-read);
+  font-size: var(--t-xl);
+  font-weight: 600;
+}
+
+.about-line {
+  color: var(--ink-2);
+}
+
+.diagnostics {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--s-1) var(--s-5);
+  margin: 0 0 var(--s-4);
+  font-size: var(--t-sm);
+}
+
+.diagnostics dt {
+  color: var(--ink-2);
+}
+
+.diagnostics dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.about-links {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+
+.about-links a {
+  color: var(--ink);
+  text-underline-offset: 3px;
 }
 
 .range-row {
@@ -215,11 +339,21 @@
     flex-wrap: wrap;
     gap: var(--s-2);
   }
-  .voice-pick,
   .range-row {
     width: 100%;
   }
   .pron-add {
     grid-template-columns: 1fr;
+  }
+  .voice-row {
+    grid-template-columns: 18px 1fr;
+  }
+  .voice-row .btn {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .voice-lang .select {
+    min-width: 0;
+    flex: 1;
   }
 }
