@@ -1,5 +1,42 @@
 # Changelog
 
+## 3.1.0
+
+### Listening workspace
+- The side panel is now one continuous workspace instead of three tabs:
+  - a deck for the current article;
+  - the numbered *Up next* queue on a rail;
+  - *Listened* items grouped by day;
+  - *Read along* in place of the lists.
+- The deck shows the source and author, a reading window (the previous sentence faded, the current one with a moving word underline), a position bar marked with the article's real section headings, elapsed and remaining time, transport, speed and voice.
+- Click the position bar to jump. <kbd>PgUp</kbd> and <kbd>PgDn</kbd> on it move between sections.
+- Speed and voice are popovers on the deck, with presets and per-voice previews.
+- The popup uses the same deck and rows. It shows the page you're on with *Add* and *Listen now*, and the next two items.
+- New empty state with a playable sample, and a preview of where the queue will appear.
+- Recently added items say so in plain text instead of an accent-coloured dot.
+
+### Speech start
+- Every start is instrumented from the click to the first spoken word. *Settings → About* shows the latest measurement.
+- Opening the popup or side panel silently warms the speech engine. The first word arrives in about 210 ms instead of about 480 ms with a local voice, and speech starts in about 400 ms instead of about 720 ms with Google's online voice.
+- An offscreen document keeps the audio output awake while you listen, so wireless and Bluetooth headsets don't drop the first words when they wake.
+- *Playing* now appears when the engine reports the first spoken word, not when it accepts the request.
+
+### Voices
+- Voices are labelled honestly as standard, enhanced or online, with where the text goes.
+- A preferred voice is remembered for each language. Missing voices fall back automatically.
+- The first-run page offers a clear choice between a private local voice and Google's online voice, with previews.
+
+### Speech pipeline
+- ISO dates are read as dates, number ranges as "20 to 60", and "vs.", "approx." and "w/" are expanded.
+- Emoji and decorative symbols are dropped.
+- Headings and list items end with sentence intonation.
+- "km/h" and similar are no longer rewritten.
+
+### Also
+- About section in Settings with version, diagnostics, source link and credits.
+- New README, screenshots and social preview image.
+- 17 new tests: startup and first-word regressions, voice ranking, speech rules, and the deck and popovers.
+
 ## 3.0.0
 
 A rebuild around one job: a queue of articles that plays reliably, in order, and remembers where you were.
