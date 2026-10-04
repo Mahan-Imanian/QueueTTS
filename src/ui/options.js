@@ -1,11 +1,12 @@
 import { normalizeQueue } from "../lib/store.js";
-import { formatDuration } from "../lib/text.js";
+import { baseLang, describeVoice as voiceInfo, languageName, rankVoices } from "../lib/voices.js";
 import { $, applyTheme, createStore, escape, h, historyItems, icon, isActive, queuedItems, send, speedLabel, toast } from "./common.js";
+import { preview } from "./deck.js";
 
 const els = {
-  voice: $("#voice"),
-  voiceHint: $("#voiceHint"),
-  preview: $("#preview"),
+  voiceLang: $("#voiceLang"),
+  voiceList: $("#voiceList"),
+  diagnostics: $("#diagnostics"),
   network: $("#network"),
   rate: $("#rate"),
   rateOut: $("#rateOut"),
@@ -27,7 +28,6 @@ const els = {
   voicePrivacy: $("#voicePrivacy")
 };
 
-els.preview.innerHTML = `${icon("play", "sm")}<span>Preview</span>`;
 let store = await createStore((changed, snapshot) => {
   store = snapshot;
   if (changed.has("settings")) fill();
@@ -35,6 +35,7 @@ let store = await createStore((changed, snapshot) => {
 });
 let voices = [];
 let savedTimer = 0;
+let voiceLanguage = baseLang(navigator.language);
 
 const save = async (patch, label = "Saved") => {
   const result = await send("settings", patch);
@@ -44,30 +45,71 @@ const save = async (patch, label = "Saved") => {
   savedTimer = setTimeout(() => (els.saved.textContent = ""), 1600);
 };
 
-const renderVoices = () => {
-  const local = voices.filter((voice) => !voice.remote);
-  const online = voices.filter((voice) => voice.remote);
-  const option = (voice) => `<option value="${escape(voice.voiceName)}">${escape(voice.voiceName)}${voice.lang ? ` (${escape(voice.lang)})` : ""}</option>`;
-  els.voice.innerHTML = `<option value="">Automatic</option>${local.length ? `<optgroup label="On this computer">${local.map(option).join("")}</optgroup>` : ""}${online.length ? `<optgroup label="Online · text is sent to Google">${online.map(option).join("")}</optgroup>` : ""}`;
-  els.voice.value = store.settings.voice;
-  if (!local.length && !online.length) els.voiceHint.textContent = "Chrome reports no voices. Install a text-to-speech voice in your operating system settings, then restart Chrome.";
+const renderLanguages = () => {
+  const languages = [...new Set(voices.map((voice) => baseLang(voice.lang)).filter(Boolean))];
+  if (!languages.includes(voiceLanguage)) voiceLanguage = languages.includes("en") ? "en" : languages[0] || "en";
+  languages.sort((a, b) => (a === voiceLanguage ? -1 : b === voiceLanguage ? 1 : languageName(a).localeCompare(languageName(b))));
+  els.voiceLang.innerHTML = languages.map((lang) => `<option value="${lang}">${escape(languageName(lang))}${store.settings.voices[lang] ? " ·  chosen" : ""}</option>`).join("");
+  els.voiceLang.value = voiceLanguage;
+};
+
+const renderVoiceList = async () => {
+  if (!voices.length) {
+    els.voiceList.innerHTML = `<p class="field-hint">Chrome reports no voices. Install a text-to-speech voice in your operating system settings, then restart Chrome.</p>`;
+    return;
+  }
+  const chosen = store.settings.voices[voiceLanguage] || "";
+  const automatic = (await send("resolvedVoice", voiceLanguage)).voice;
+  const inLanguage = rankVoices(voices, { lang: voiceLanguage, allowNetwork: true }).filter((voice) => baseLang(voice.lang) === voiceLanguage);
+  const ranked = [...inLanguage.filter((voice) => !voice.remote), ...inLanguage.filter((voice) => voice.remote)];
+  const row = (voice) => {
+    const info = voiceInfo(voice);
+    const blocked = info.remote && !store.settings.allowNetworkVoices;
+    return `<label class="voice-row${blocked ? " muted" : ""}">
+      <input type="radio" name="voice" value="${escape(voice.voiceName)}" ${voice.voiceName === chosen ? "checked" : ""} />
+      <span class="voice-text"><span class="voice-label">${escape(info.label)}</span><span class="voice-detail">${escape(info.language)} · ${info.remote ? `<span class="tier tier-online">Online</span>, text is sent to Google${blocked ? " (turn on online voices below, or pick it to allow)" : ""}` : `<span class="tier tier-${info.tier}">${info.tierLabel}</span>, on this computer`}${info.highlights ? "" : " · no word highlight"}</span></span>
+      <button class="btn" type="button" data-preview="${escape(voice.voiceName)}" aria-label="Preview ${escape(info.label)}">${icon("play", "sm")}<span>Preview</span></button>
+    </label>`;
+  };
+  els.voiceList.innerHTML = `<label class="voice-row">
+      <input type="radio" name="voice" value="" ${chosen ? "" : "checked"} />
+      <span class="voice-text"><span class="voice-label">Automatic</span><span class="voice-detail">${automatic ? `Currently ${escape(voiceInfo(automatic).label)}, ${automatic.remote ? "online" : "on this computer"}` : "No voice available"}</span></span>
+      <span></span>
+    </label>${ranked.map(row).join("")}`;
 };
 
 const describeVoice = async () => {
-  const result = await send("resolvedVoice", "en");
-  const voice = result.voice;
-  if (!store.settings.voice) els.voiceHint.textContent = voice ? `Automatic picks the best voice for each article’s language. For English that’s ${voice.voiceName}.` : "Automatic picks the best voice for each article’s language.";
-  const chosen = voices.find((entry) => entry.voiceName === store.settings.voice);
-  const remote = chosen ? chosen.remote : voice?.remote;
-  els.voicePrivacy.textContent = remote
-    ? "Your current voice is an online Google voice, so the text being read is sent to Google while you listen."
+  const resolved = (await send("resolvedVoice", voiceLanguage)).voice;
+  els.voicePrivacy.textContent = resolved?.remote
+    ? `Your ${languageName(voiceLanguage)} voice is an online Google voice, so the text being read is sent to Google while you listen.`
     : "Your current voice runs on this computer, so the text being read never leaves it.";
+};
+
+const renderDiagnostics = async () => {
+  const manifest = chrome.runtime.getManifest();
+  $("#version").textContent = `Version ${manifest.version}`;
+  const result = await send("diagnostics");
+  const start = result.lastStart;
+  const at = (name) => start?.marks?.find((entry) => entry.name === name)?.ms;
+  const firstSound = at("first word") ?? at("start event");
+  const bytes = await chrome.storage.local.getBytesInUse(null);
+  const chrome_ = navigator.userAgent.match(/Chrome\/([\d.]+)/)?.[1] || "unknown";
+  const rows = [
+    ["Last start", start && firstSound != null ? `${Math.round(firstSound)} ms from Play to the first spoken word${at("text ready") != null ? ` (QueueTTS ${Math.round(at("speak called") ?? 0)} ms, speech engine ${Math.round(firstSound - (at("speak called") ?? 0))} ms)` : ""}` : "Play something to measure"],
+    ["Voice", start?.marks?.find((entry) => entry.name === "voice ready")?.voice || "Not used yet"],
+    ["Stored", `${bytes > 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`} in this browser`],
+    ["Chrome", chrome_]
+  ];
+  els.diagnostics.replaceChildren(...rows.flatMap(([term, value]) => [h("dt", { text: term }), h("dd", { text: value })]));
 };
 
 const fill = () => {
   const { settings } = store;
   applyTheme(settings);
-  if (voices.length) els.voice.value = settings.voice;
+  if (voices.length) {
+    renderLanguages();
+    renderVoiceList();
+  }
   els.network.checked = settings.allowNetworkVoices;
   els.rate.value = settings.rate;
   els.rateOut.textContent = speedLabel(settings.rate);
@@ -98,8 +140,8 @@ const renderPronunciations = () => {
 const speak = async (text) => {
   if (isActive(store.player)) await send("pause");
   const settings = store.settings;
-  const options = { rate: settings.rate, pitch: settings.pitch, volume: settings.volume };
-  const chosen = els.voice.value || (await send("resolvedVoice", "en")).voice?.voiceName;
+  const options = { rate: settings.rate, pitch: settings.pitch, volume: settings.volume || 1 };
+  const chosen = settings.voices[voiceLanguage] || (await send("resolvedVoice", voiceLanguage)).voice?.voiceName;
   if (chosen) options.voiceName = chosen;
   chrome.tts.stop();
   chrome.tts.speak(text, options);
@@ -122,12 +164,30 @@ const ask = (title, text, ok) => new Promise((resolve) => {
   els.confirm.addEventListener("close", () => resolve(els.confirm.returnValue === "ok"), { once: true });
 });
 
-els.voice.addEventListener("change", () => {
-  const chosen = voices.find((voice) => voice.voiceName === els.voice.value);
-  save(chosen?.remote ? { voice: els.voice.value, allowNetworkVoices: true } : { voice: els.voice.value });
+els.voiceLang.addEventListener("change", () => {
+  voiceLanguage = els.voiceLang.value;
+  renderVoiceList();
+  describeVoice();
 });
-els.preview.addEventListener("click", () => speak("This is how your articles will sound. Pauses, headings and quotes are read naturally."));
-els.network.addEventListener("change", () => save(els.network.checked ? { allowNetworkVoices: true } : { allowNetworkVoices: false, voice: voices.find((voice) => voice.voiceName === store.settings.voice)?.remote ? "" : store.settings.voice }));
+els.voiceList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-preview]");
+  if (!button) return;
+  event.preventDefault();
+  preview(button.dataset.preview, store.settings, store.player);
+});
+els.voiceList.addEventListener("change", (event) => {
+  const name = event.target.value;
+  const chosen = voices.find((voice) => voice.voiceName === name);
+  const map = { ...store.settings.voices };
+  if (name) map[voiceLanguage] = name;
+  else delete map[voiceLanguage];
+  save(chosen?.remote ? { voices: map, allowNetworkVoices: true } : { voices: map }, chosen?.remote ? "Saved · online voice" : "Saved");
+});
+els.network.addEventListener("change", () => {
+  if (els.network.checked) return save({ allowNetworkVoices: true });
+  const map = Object.fromEntries(Object.entries(store.settings.voices).filter(([, name]) => !voices.find((voice) => voice.voiceName === name)?.remote));
+  save({ allowNetworkVoices: false, voices: map });
+});
 for (const [input, key, out, format] of [[els.rate, "rate", els.rateOut, speedLabel], [els.pitch, "pitch", els.pitchOut, (v) => Number(v).toFixed(1)], [els.volume, "volume", els.volumeOut, (v) => `${Math.round(v * 100)}%`]]) {
   input.addEventListener("input", () => (out.textContent = format(Number(input.value))));
   input.addEventListener("change", () => save({ [key]: Number(input.value) }));
@@ -207,7 +267,7 @@ const shortcuts = async () => {
 
 const loaded = await send("voices");
 voices = loaded.voices || [];
-renderVoices();
 fill();
 usage();
 shortcuts();
+renderDiagnostics();
