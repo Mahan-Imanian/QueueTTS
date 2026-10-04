@@ -9,7 +9,7 @@ export const LEGACY_KEY = "queuetts:v2";
 export const PLAYER_STATUS = ["idle", "preparing", "playing", "paused", "stopped", "completed", "error", "recovering"];
 
 export const defaultSettings = () => ({
-  voice: "",
+  voices: {},
   allowNetworkVoices: false,
   rate: 1,
   pitch: 1,
@@ -33,8 +33,13 @@ const finite = (value, fallback, min, max) => {
 export const normalizeSettings = (raw = {}) => {
   const base = defaultSettings();
   const value = raw && typeof raw === "object" ? raw : {};
+  const voices = {};
+  if (value.voices && typeof value.voices === "object") {
+    for (const [lang, name] of Object.entries(value.voices)) if (/^[a-z]{2,3}$/.test(lang) && typeof name === "string" && name) voices[lang] = name;
+  }
+  if (typeof value.voice === "string" && value.voice && !voices.en) voices.en = value.voice;
   return {
-    voice: typeof value.voice === "string" ? value.voice : base.voice,
+    voices,
     allowNetworkVoices: Boolean(value.allowNetworkVoices),
     rate: finite(value.rate, base.rate, 0.5, 3),
     pitch: finite(value.pitch, base.pitch, 0, 2),

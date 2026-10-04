@@ -31,6 +31,26 @@ test("citations, URLs and markup are not spoken", () => {
   assert.equal(toSpeech("Use `npm test`, e.g., daily."), "Use npm test, for example, daily.");
 });
 
+test("speech clean-up handles dates, ranges, symbols, emoji and abbreviations without changing meaning", () => {
+  assert.equal(toSpeech("Released on 2026-10-04 for 20–60 users."), "Released on October 4, 2026 for 20 to 60 users.");
+  assert.equal(toSpeech("Fast 🚀 and cheap ✨"), "Fast and cheap");
+  assert.equal(toSpeech("Cats vs. dogs, approx. 30 each, w/ treats & toys."), "Cats versus dogs, approximately 30 each, with treats and toys.");
+  assert.equal(toSpeech("A 1920x1080 screen → better."), "A 1920 by 1080 screen to better.");
+  assert.equal(toSpeech("It works — mostly."), "It works, mostly.");
+  assert.equal(toSpeech("Speed in km/h and TCP/IP stay as written."), "Speed in km/h and TCP/IP stay as written.");
+  assert.equal(toSpeech("Ranked #1 overall."), "Ranked number 1 overall.");
+  assert.equal(toSpeech("Not a date: 2026-13-45."), "Not a date: 2026-13-45.");
+  assert.equal(toSpeech("Die Zahl 20–60 bleibt.", [], { lang: "de" }), "Die Zahl 20–60 bleibt.");
+});
+
+test("headings and list items get closing punctuation for natural intonation", () => {
+  assert.equal(toSpeech("The hidden ridership", [], { close: true }), "The hidden ridership.");
+  assert.equal(toSpeech("Is it worth it?", [], { close: true }), "Is it worth it?");
+  assert.equal(toSpeech("Plain sentence", [], { close: false }), "Plain sentence");
+  const plan = buildPlan({ blocks: [{ k: "h", t: "Title" }, { k: "li", t: "Item one" }, { k: "p", t: "Body text here." }] });
+  assert.deepEqual(plan.units.map((unit) => unit.close), [true, true, false]);
+});
+
 test("pronunciations respect word boundaries and unicode", () => {
   const rules = [{ from: "API", to: "A P I" }, { from: "C++", to: "C plus plus" }];
   assert.equal(toSpeech("The API uses C++ and RAPID.", rules), "The A P I uses C plus plus and RAPID.");

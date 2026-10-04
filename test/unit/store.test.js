@@ -30,6 +30,6 @@ test("legacy v2 data migrates and drops failed captures", () => {
   assert.deepEqual(out.queue.items.map((entry) => [entry.id, entry.status]), [["x", "done"], ["z", "queued"]]);
   assert.equal(out.queue.items[0].url, "https://a.com/p");
   assert.equal(out.docs["doc:x"].blocks.length, 2);
-  assert.equal(out.settings.voice, "Zira");
+  assert.deepEqual(out.settings.voices, { en: "Zira" });
   assert.deepEqual(out.settings.pronunciations, [{ from: "API", to: "A P I" }]);
 });

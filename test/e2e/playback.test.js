@@ -155,7 +155,7 @@ test("the UI never shows Playing after a browser restart, and the first press pl
   await first.waitFor(async () => ((await first.player()).pos?.s ?? 0) >= 2, { label: "progress before restart", timeout: 20000 });
   const before = await first.player();
   await first.browser.close();
-  const second = await launch({ extension, profile });
+  const second = await launch({ extension, profile, reuseInstalled: true });
   try {
     const restored = await second.waitFor(async () => {
       const player = await second.player();
@@ -176,7 +176,7 @@ test("the UI never shows Playing after a browser restart, and the first press pl
 
 test("speech failures fall back once, then surface a clear error instead of pretending to play", async () => {
   await fakeSpeech({ fail: true });
-  await app.send("settings", { voice: "Fake voice" });
+  await app.send("settings", { voices: { en: "Fake voice" } });
   const a = await add(sentences(3), "Fails");
   await app.send("play", a.id);
   const player = await until(async () => {
@@ -187,7 +187,7 @@ test("speech failures fall back once, then surface a clear error instead of pret
   await realSpeech();
   await app.send("dismissError");
   assert.equal((await app.player()).status, "paused");
-  await app.send("settings", { voice: "" });
+  await app.send("settings", { voices: {} });
 });
 
 test("headings are never spoken as 'Heading' and code is skipped by default", async () => {
