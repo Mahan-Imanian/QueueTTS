@@ -64,20 +64,53 @@ export const stripCitations = (text) => String(text ?? "")
   .replace(/\[(?:\d+(?:\s*[,–-]\s*\d+)*|[a-z]|[ivx]+|note \d+|nb \d+|citation needed|clarification needed|when\?|who\?|according to whom\?|edit|update)\]/gi, "")
   .replace(/\s+([,.;:!?])/g, "$1");
 
-export const toSpeech = (text, pronunciations = []) => {
+const dateFormatters = new Map();
+const spokenDate = (year, month, day, lang) => {
+  const key = lang || "en";
+  if (!dateFormatters.has(key)) {
+    try {
+      dateFormatters.set(key, new Intl.DateTimeFormat(key, { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }));
+    } catch {
+      dateFormatters.set(key, new Intl.DateTimeFormat("en", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }));
+    }
+  }
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  return Number.isNaN(date.getTime()) || date.getUTCDate() !== Number(day) ? null : dateFormatters.get(key).format(date);
+};
+
+export const toSpeech = (text, pronunciations = [], { lang = "en", close = false } = {}) => {
+  const english = /^en\b/i.test(lang || "en");
   let spoken = stripCitations(text)
+    .replace(/\p{Extended_Pictographic}️?/gu, "")
     .replace(/\bhttps?:\/\/(?:www\.)?([^\s/?#]+)[^\s]*/gi, "$1")
     .replace(/\bwww\.([^\s/?#]+)[^\s]*/gi, "$1")
     .replace(/`([^`]+)`/g, "$1")
-    .replace(/\be\.g\.,?/gi, "for example,")
-    .replace(/\bi\.e\.,?/gi, "that is,")
-    .replace(/(\p{L})\/(\p{L})/gu, "$1 or $2")
-    .replace(/\s*[|•·]\s*/g, ", ")
-    .replace(/[*_#~^]+/g, " ");
+    .replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (match, year, month, day) => spokenDate(year, month, day, lang) || match)
+    .replace(/(\d)\s*[–—]\s*(\d)/g, english ? "$1 to $2" : "$1–$2")
+    .replace(/\s+[—–]\s+|—/g, ", ")
+    .replace(/\s*[|•·▪►]\s*/g, ", ")
+    .replace(/[*_#~^]{2,}|(?<=\s)[*_#^]+(?=\s)/g, " ")
+    .replace(/(^|\s)#(\d)/g, english ? "$1number $2" : "$1$2")
+    .replace(/(\d)\s*[×x]\s*(\d)/g, english ? "$1 by $2" : "$1 × $2")
+    .replace(/→|⇒|->/g, english ? " to " : " → ");
+  if (english) {
+    spoken = spoken
+      .replace(/\be\.g\.,?/gi, "for example,")
+      .replace(/\bi\.e\.,?/gi, "that is,")
+      .replace(/\bvs\.?(?=\s)/gi, "versus")
+      .replace(/\bapprox\.(?=\s)/gi, "approximately")
+      .replace(/(^|\s)w\/(?=\s)/gi, "$1with")
+      .replace(/\band\/or\b/gi, "and or")
+      .replace(/(^|\s)~(?=\d)/g, "$1about ")
+      .replace(/±/g, " plus or minus ")
+      .replace(/\s&\s/g, " and ");
+  }
   for (const rule of parsePronunciations(pronunciations)) {
     spoken = spoken.replace(new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(rule.from)}(?![\\p{L}\\p{N}])`, "giu"), rule.to);
   }
-  return normalizeSpace(spoken.replace(/,\s*,/g, ","));
+  spoken = normalizeSpace(spoken.replace(/,\s*,/g, ",").replace(/^\s*,\s*/, ""));
+  if (close && spoken && !/[.!?…:;]["'”’)\]]*$/.test(spoken)) spoken += ".";
+  return spoken;
 };
 
 export const PAUSE = { sentence: 0, paragraph: 260, heading: 480, list: 160 };
@@ -93,7 +126,7 @@ export const buildPlan = (doc, { lang = "en", readCode = false, announceHeadings
       const first = s === 0;
       const pause = !first ? PAUSE.sentence : block.k === "h" ? PAUSE.heading : block.k === "li" ? PAUSE.list : PAUSE.paragraph;
       const lead = first && block.k === "h" && announceHeadings ? "Section: " : "";
-      units.push({ b, s, text, lead, pause: units.length ? pause : 0, start: chars, heading: block.k === "h" });
+      units.push({ b, s, text, lead, pause: units.length ? pause : 0, start: chars, heading: block.k === "h", close: block.k === "h" || block.k === "li" });
       chars += text.length + 1;
     });
   });
