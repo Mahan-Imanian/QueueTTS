@@ -5,36 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Welcome to QueueTTS</title>
     <link rel="stylesheet" href="../styles/ui.css" />
-    <link rel="stylesheet" href="../styles/surfaces.css" />
+    <link rel="stylesheet" href="../styles/workspace.css" />
     <link rel="stylesheet" href="../styles/welcome.css" />
   </head>
   <body class="welcome">
     <main class="welcome-main">
       <header class="welcome-brand"><img class="mark" src="../assets/icons/mark.svg" alt="" width="28" height="28" /><span>QueueTTS</span></header>
-      <h1>Listen to the web later, in order.</h1>
-      <p class="lede">Add articles as you find them. QueueTTS reads them aloud one after another, and remembers the sentence you stopped on.</p>
+      <h1>Save it now.<br />Hear it later.</h1>
+      <p class="lede">Add articles as you find them. QueueTTS reads them aloud one after another, and picks up from the sentence where you stopped, even after you restart Chrome.</p>
       <div class="demo">
         <button class="btn btn-primary btn-lg" id="demo" type="button"></button>
-        <section class="np demo-player" id="player" aria-label="Now playing" hidden></section>
+        <section class="deck demo-deck" id="deck" aria-label="Now listening" hidden></section>
       </div>
+
+      <section class="voices" aria-labelledby="voiceTitle">
+        <h2 id="voiceTitle">Choose how it sounds</h2>
+        <p class="section-lede">QueueTTS uses the voices Chrome provides. You can change this later in Settings.</p>
+        <div class="voice-choices" role="radiogroup" aria-labelledby="voiceTitle">
+          <label class="voice-choice">
+            <input type="radio" name="voiceMode" value="local" />
+            <span class="choice-body">
+              <span class="choice-title">On this computer</span>
+              <span class="choice-text">Private and works offline. Nothing you add leaves your computer. On Windows these voices sound mechanical.</span>
+              <span class="choice-voice" id="localVoice"></span>
+            </span>
+            <button class="btn" type="button" data-preview="local"></button>
+          </label>
+          <label class="voice-choice">
+            <input type="radio" name="voiceMode" value="online" />
+            <span class="choice-body">
+              <span class="choice-title">Google online voice</span>
+              <span class="choice-text">Clearer and more natural. Chrome sends the text being read to Google while you listen. No word-by-word highlight.</span>
+              <span class="choice-voice" id="onlineVoice"></span>
+            </span>
+            <button class="btn" type="button" data-preview="online"></button>
+          </label>
+        </div>
+      </section>
+
       <ol class="steps">
         <li>
           <h2>Pin it</h2>
-          <p>Open the puzzle-piece menu in the toolbar and pin QueueTTS, so its button is always one click away.</p>
+          <p>Open the puzzle-piece menu in Chrome’s toolbar and pin QueueTTS, so it’s one click away.</p>
         </li>
         <li>
-          <h2>Add pages</h2>
-          <p id="addHint">Use the toolbar button, right-click a page, or select text first to add just that part.</p>
+          <h2>Add what you want to hear</h2>
+          <p id="addHint">Use the toolbar button on any article, or right-click the page. Select text first to add only that part.</p>
         </li>
         <li>
-          <h2>Listen anywhere</h2>
-          <p id="playHint">Play from the toolbar button, or open the side panel to see the whole queue and follow along.</p>
+          <h2>Listen from anywhere</h2>
+          <p id="playHint">Play from the toolbar button, or open the side panel to see your queue and read along.</p>
         </li>
       </ol>
-      <p class="privacy-line">Everything you add stays in this browser. There’s no account and no server.</p>
+      <p class="privacy-line">Your queue and everything you add are stored in this browser profile. QueueTTS has no account, no server and no analytics.</p>
       <div class="welcome-actions">
         <button class="btn btn-lg" id="finish" type="button">Done</button>
-        <a class="btn btn-quiet" href="options.html">Voice and settings</a>
+        <a class="btn btn-quiet" href="options.html">All settings</a>
       </div>
     </main>
     <script type="module" src="../src/ui/welcome.js"></script>

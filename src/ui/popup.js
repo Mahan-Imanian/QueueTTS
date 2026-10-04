@@ -1,19 +1,20 @@
 import { findItem } from "../lib/queue.js";
 import { wordCount } from "../lib/text.js";
-import { $, applyTheme, connectSpeech, createStore, favicon, formatDuration, h, icon, isActive, itemRemaining, keyed, queuedItems, send, sourceLabel, typing } from "./common.js";
-import { mountPlayer } from "./player.js";
+import { $, applyTheme, connectSpeech, createStore, escape, favicon, formatDuration, h, historyItems, icon, isActive, itemRemaining, keyed, queuedItems, send, typing } from "./common.js";
+import { mountDeck } from "./deck.js";
+import { createRow, updateRow } from "./rows.js";
 
 const els = {
-  player: $("#player"),
-  intro: $("#intro"),
-  page: $("#page"),
-  pageFav: $(".page-fav"),
-  pageTitle: $("#pageTitle"),
-  pageMeta: $("#pageMeta"),
-  pageActions: $("#pageActions"),
+  deck: $("#deck"),
+  welcome: $("#welcome"),
+  here: $("#here"),
+  hereFav: $("#hereFav"),
+  hereTitle: $("#hereTitle"),
+  hereMeta: $("#hereMeta"),
+  hereActions: $("#hereActions"),
   next: $("#next"),
   nextList: $("#nextList"),
-  nextTotal: $("#nextTotal"),
+  nextMeta: $("#nextMeta"),
   more: $("#more"),
   caughtUp: $("#caughtUp"),
   paste: $("#paste"),
@@ -33,17 +34,16 @@ els.pasteToggle.innerHTML = `${icon("text", "sm")}<span>Paste text</span>`;
 let tab = null;
 let context = null;
 let confirmation = null;
-const player = mountPlayer(els.player);
+const deck = mountDeck(els.deck, { compact: true });
 let store = await createStore((changed, snapshot) => render(changed, snapshot));
 
 const openPanel = async () => {
   try {
     await chrome.sidePanel.open({ windowId: tab?.windowId ?? (await chrome.windows.getCurrent()).id });
-    window.close();
   } catch {
     await chrome.tabs.create({ url: chrome.runtime.getURL("pages/panel.html") });
-    window.close();
   }
+  window.close();
 };
 
 $("#openPanel").addEventListener("click", openPanel);
@@ -52,72 +52,81 @@ $("#openSettings").addEventListener("click", () => {
   window.close();
 });
 
-const pageAction = (label, primary, run, iconName) => h("button", { class: `btn ${primary ? "btn-primary" : ""}`, type: "button", html: `${iconName ? icon(iconName, "sm") : ""}<span>${label}</span>`, onclick: run });
+const action = (label, primary, run, iconName) => h("button", { class: `btn ${primary ? "btn-primary" : ""}`, type: "button", html: `${iconName ? icon(iconName, "sm") : ""}<span>${escape(label)}</span>`, onclick: run });
 
-const renderPage = () => {
-  const { queue, player: state } = store;
-  els.page.setAttribute("aria-busy", String(!context));
+const renderHere = () => {
+  const { queue, player } = store;
+  els.here.setAttribute("aria-busy", String(!context));
   if (!context) return;
   const existing = context.existing ? findItem(queue, context.existing.id) : null;
-  els.pageFav.replaceChildren(context.url ? favicon({ url: context.url }) : favicon({ source: "paste" }));
-  els.pageActions.replaceChildren();
+  els.hereFav.replaceChildren(favicon(context.url ? { url: context.url } : { source: "paste" }));
+  els.hereActions.replaceChildren();
+  els.hereMeta.classList.remove("ok");
   if (confirmation) {
-    els.pageTitle.textContent = confirmation.title;
-    els.pageMeta.textContent = confirmation.message;
-    if (confirmation.undo) els.pageActions.append(pageAction("Undo", false, confirmation.undo, "undo"));
+    els.hereTitle.textContent = confirmation.title;
+    els.hereMeta.textContent = confirmation.message;
+    els.hereMeta.classList.add("ok");
+    if (confirmation.undo) els.hereActions.append(action("Undo", false, confirmation.undo, "undo"));
     return;
   }
   if (!context.ok) {
-    els.pageTitle.textContent = context.title || "This page";
-    els.pageMeta.textContent = context.message;
-    els.pageActions.append(pageAction("Paste text instead", false, () => togglePaste(true), "text"));
+    els.hereTitle.textContent = context.title || "This page";
+    els.hereMeta.textContent = context.message;
+    els.hereActions.append(action("Paste text instead", false, () => togglePaste(true), "text"));
     return;
   }
-  els.pageTitle.textContent = context.title;
+  els.hereTitle.textContent = context.title;
   if (context.selectionWords >= 3) {
-    els.pageMeta.textContent = `${context.selectionWords} words selected`;
-    els.pageActions.append(pageAction("Add selection", true, () => capture("selection", "end"), "plus"), pageAction("Listen now", false, () => capture("selection", "now"), "play"));
+    els.hereMeta.textContent = `${context.selectionWords} words selected on this page`;
+    els.hereActions.append(action("Add selection", true, () => capture("selection", "end"), "plus"), action("Listen now", false, () => capture("selection", "now"), "play"));
     return;
   }
   if (existing) {
     const index = queuedItems(queue).findIndex((item) => item.id === existing.id);
-    const isCurrent = existing.id === state.itemId;
     if (existing.status === "done") {
-      els.pageMeta.textContent = "You’ve listened to this page";
-      els.pageActions.append(pageAction("Listen again", false, () => send("play", existing.id), "play"));
-    } else if (isCurrent) {
-      els.pageMeta.textContent = isActive(state) ? "Playing now" : "Up first in your queue";
+      els.hereMeta.textContent = "You’ve listened to this page";
+      els.hereActions.append(action("Listen again", false, () => send("play", existing.id), "play"));
+    } else if (existing.id === player.itemId) {
+      els.hereMeta.textContent = isActive(player) ? "Playing now" : "Up first in your queue";
     } else {
-      els.pageMeta.textContent = `In your queue · #${index + 1}`;
-      els.pageActions.append(pageAction("Listen now", false, () => send("play", existing.id), "play"));
+      els.hereMeta.textContent = `In your queue · #${index + 1}`;
+      els.hereActions.append(action("Listen now", false, () => send("play", existing.id), "play"));
     }
     return;
   }
-  els.pageMeta.textContent = context.readable ? context.site : `${context.site} · may not be an article`;
-  els.pageActions.append(pageAction("Add to queue", true, () => capture("page", "end"), "plus"), pageAction("Listen now", false, () => capture("page", "now"), "play"));
+  els.hereMeta.textContent = context.readable ? context.site : `${context.site} · may not be an article`;
+  els.hereActions.append(action("Add to queue", true, () => capture("page", "end"), "plus"), action("Listen now", false, () => capture("page", "now"), "play"));
 };
 
 const capture = async (mode, placement) => {
-  for (const button of els.pageActions.querySelectorAll("button")) button.disabled = true;
-  els.pageMeta.textContent = mode === "page" ? "Reading the page…" : "Adding selection…";
+  for (const button of els.hereActions.querySelectorAll("button")) button.disabled = true;
+  els.hereMeta.textContent = mode === "page" ? "Reading the page…" : "Adding the selection…";
   const result = await send("capture", tab.id, mode, placement);
   if (!result.ok) {
     context = { ...context, ok: false, message: result.message || "Couldn’t read this page." };
-    renderPage();
+    renderHere();
     return;
   }
   if (placement === "now") {
     await send("play", result.item.id);
     confirmation = null;
     context = { ...context, existing: result.item, selectionWords: 0 };
-    renderPage();
+    renderHere();
     return;
   }
   const minutes = formatDuration(itemRemaining(result.item, store.settings, 0));
   confirmation = result.duplicate
     ? { title: result.item.title, message: `Already in your queue · #${result.position + 1}` }
-    : { title: result.item.title, message: result.position === 0 ? `Added · ${minutes} · plays first` : `Added · ${minutes} · #${result.position + 1} in queue`, undo: async () => { await send("remove", result.item.id); confirmation = null; await refreshContext(); } };
-  renderPage();
+    : {
+        title: result.item.title,
+        message: result.position === 0 ? `Added · ${minutes} · plays first` : `Added · ${minutes} · #${result.position + 1} in the queue`,
+        undo: async () => {
+          await send("remove", result.item.id);
+          confirmation = null;
+          await refreshContext();
+        }
+      };
+  renderHere();
 };
 
 const togglePaste = (open = els.paste.hidden) => {
@@ -141,8 +150,8 @@ const addPaste = async () => {
   els.pasteAdd.disabled = true;
   els.pasteCount.textContent = "";
   togglePaste(false);
-  confirmation = { title: result.item.title, message: result.position === 0 ? "Added · plays first" : `Added · #${result.position + 1} in queue`, undo: async () => { await send("remove", result.item.id); confirmation = null; renderPage(); } };
-  renderPage();
+  confirmation = { title: result.item.title, message: result.position === 0 ? "Added · plays first" : `Added · #${result.position + 1} in the queue`, undo: async () => { await send("remove", result.item.id); confirmation = null; renderHere(); } };
+  renderHere();
 };
 els.pasteAdd.addEventListener("click", addPaste);
 els.pasteText.addEventListener("keydown", (event) => {
@@ -154,40 +163,33 @@ els.pasteText.addEventListener("keydown", (event) => {
 });
 
 const renderNext = () => {
-  const { queue, player: state, settings } = store;
-  const queued = queuedItems(queue);
-  const upcoming = queued.filter((item) => item.id !== state.itemId);
+  const queued = queuedItems(store.queue);
+  const upcoming = queued.filter((item) => item.id !== store.player.itemId);
   els.next.hidden = upcoming.length === 0;
-  const total = upcoming.reduce((sum, item) => sum + itemRemaining(item, settings), 0);
-  els.nextTotal.textContent = upcoming.length ? `${upcoming.length} · ${formatDuration(total)}` : "";
-  keyed(els.nextList, upcoming.slice(0, 3), (item) => item.id, (item) => {
-    const row = h("li", { class: "row" });
-    row.innerHTML = `<span class="row-num"></span><button class="row-main" type="button"><span class="row-fav"></span><span class="row-text"><span class="row-title"></span><span class="meta row-meta"></span></span></button>`;
-    row.querySelector(".row-main").addEventListener("click", () => send("play", row.dataset.key));
-    return row;
-  }, (row, item) => {
-    const index = upcoming.indexOf(item);
-    row.querySelector(".row-num").textContent = String(index + 1);
-    if (row.dataset.title !== item.title) {
-      row.dataset.title = item.title;
-      row.querySelector(".row-fav").replaceChildren(favicon(item));
-      row.querySelector(".row-title").textContent = item.title;
-      row.querySelector(".row-main").setAttribute("aria-label", `Play ${item.title}`);
-    }
-    const left = itemRemaining(item, settings);
-    row.querySelector(".row-meta").textContent = `${sourceLabel(item)} · ${item.progress > 0 ? `${formatDuration(left)} left` : formatDuration(left)}`;
-  });
-  els.more.hidden = upcoming.length <= 3;
-  els.more.textContent = `See all ${queued.length} in the queue`;
+  const total = upcoming.reduce((sum, item) => sum + itemRemaining(item, store.settings), 0);
+  els.nextMeta.textContent = upcoming.length ? `${upcoming.length} · ${formatDuration(total)}` : "";
+  keyed(els.nextList, upcoming.slice(0, 2), (item) => item.id, createRow, (row, item) => updateRow(row, item, { kind: "next", index: upcoming.indexOf(item) + 1, store }));
+  els.nextList.classList.toggle("rail", Math.min(2, upcoming.length) > 1);
+  els.more.hidden = upcoming.length <= 2;
+  els.more.textContent = `All ${upcoming.length}`;
 };
 
+els.nextList.addEventListener("click", (event) => {
+  const row = event.target.closest(".row");
+  if (!row) return;
+  const id = row.dataset.key;
+  if (event.target.closest("[data-act='menu']")) return openPanel();
+  send("play", id);
+});
 els.more.addEventListener("click", openPanel);
 
 const renderHealth = () => {
   const message = store.health?.storage;
   els.health.hidden = !message;
-  if (message) els.health.innerHTML = `${icon("alert", "sm")}<p></p>`;
-  if (message) els.health.querySelector("p").textContent = message;
+  if (message) {
+    els.health.innerHTML = `${icon("alert", "sm")}<p></p>`;
+    els.health.querySelector("p").textContent = message;
+  }
 };
 
 function render(changed = new Set(["player", "queue", "settings", "health"]), snapshot = store) {
@@ -195,12 +197,13 @@ function render(changed = new Set(["player", "queue", "settings", "health"]), sn
   applyTheme(store.settings);
   const queued = queuedItems(store.queue);
   const hasCurrent = Boolean(store.player.itemId && findItem(store.queue, store.player.itemId));
-  player.update(store, changed);
-  els.intro.hidden = hasCurrent || queued.length > 0 || store.player.status === "completed";
-  els.caughtUp.hidden = !(store.player.status === "completed" && !hasCurrent && !queued.length);
+  deck.update(store, changed);
+  els.welcome.hidden = hasCurrent || queued.length > 0 || historyItems(store.queue).length > 0;
+  els.caughtUp.hidden = hasCurrent || queued.length > 0 || historyItems(store.queue).length === 0;
+  if (!els.caughtUp.hidden) els.caughtUp.textContent = "You’re all caught up. Add this page, or anything else, and it plays next.";
   if (changed.has("queue") || changed.has("player") || changed.has("settings")) {
     renderNext();
-    renderPage();
+    renderHere();
   }
   if (changed.has("health")) renderHealth();
 }
@@ -208,28 +211,28 @@ function render(changed = new Set(["player", "queue", "settings", "health"]), sn
 const refreshContext = async () => {
   [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   context = tab ? await send("context", tab.id) : { ok: false, message: "No page is open." };
-  renderPage();
+  renderHere();
 };
 
 const setHint = async () => {
   const commands = await chrome.commands.getAll();
   const shortcut = commands.find((command) => command.name === "queue-page")?.shortcut;
-  els.hint.innerHTML = shortcut ? `${shortcut.split("+").map((key) => `<kbd>${key}</kbd>`).join("")} adds any page` : "";
+  els.hint.innerHTML = shortcut ? `${shortcut.split("+").map((key) => `<kbd>${escape(key)}</kbd>`).join("")} adds any page` : "";
 };
 
 document.addEventListener("keydown", (event) => {
-  if (typing(event) || event.altKey || event.ctrlKey || event.metaKey) return;
-  const onButton = event.target instanceof HTMLElement && event.target.closest("button");
+  if (typing(event) || event.altKey || event.ctrlKey || event.metaKey || document.querySelector(":popover-open")) return;
+  const onButton = event.target instanceof HTMLElement && event.target.closest("button, [role='slider']");
   if (event.key === " " && !onButton) {
     event.preventDefault();
     send("toggle");
   } else if (event.key === "ArrowLeft") send("skip", -1);
   else if (event.key === "ArrowRight") send("skip", 1);
-  else if (event.key === "-" || event.key === "[") player.changeRate(-0.1);
-  else if (event.key === "=" || event.key === "+" || event.key === "]") player.changeRate(0.1);
+  else if (event.key === "-" || event.key === "[") deck.changeRate(-0.1);
+  else if (event.key === "=" || event.key === "+" || event.key === "]") deck.changeRate(0.1);
 });
 
-connectSpeech((message) => player.onSpeech(message));
+connectSpeech((message) => deck.onSpeech(message));
 render();
 renderHealth();
 setHint();

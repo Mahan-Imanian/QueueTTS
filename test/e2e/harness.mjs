@@ -21,19 +21,19 @@ export const buildCopy = ({ hostAccess = true } = {}) => {
   return dir;
 };
 
-export const launch = async ({ extension, profile, headless = process.env.HEADFUL ? false : "new" } = {}) => {
+export const launch = async ({ extension, profile, headless = process.env.HEADFUL ? false : "new", args = [], reuseInstalled = false } = {}) => {
   const ext = extension || buildCopy();
   const userDataDir = profile || mkdtempSync(join(tmpdir(), "qtts-profile-"));
   const browser = await puppeteer.launch({
     executablePath: CHROME,
     headless: false,
     pipe: true,
-    enableExtensions: [ext],
+    enableExtensions: reuseInstalled ? true : [ext],
     userDataDir,
     defaultViewport: null,
     ignoreDefaultArgs: ["--disable-component-extensions-with-background-pages", "--mute-audio"],
     targetFilter: (target) => target.type() !== "service_worker",
-    args: ["--window-size=1280,860", "--no-first-run", "--no-default-browser-check", ...(headless ? ["--window-position=-2400,0"] : [])]
+    args: ["--window-size=1280,860", "--no-first-run", "--no-default-browser-check", ...(headless ? ["--window-position=-2400,0"] : []), ...args]
   });
   let id = "";
   for (let attempt = 0; attempt < 60 && !id; attempt += 1) {

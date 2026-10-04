@@ -226,7 +226,10 @@ export const typing = (event) => {
   return target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 };
 
-export const speedLabel = (rate) => `${(Math.round(Number(rate) * 10) / 10).toFixed(1)}×`;
+export const speedLabel = (rate) => {
+  const value = Math.round(Number(rate) * 100) / 100;
+  return `${Number.isInteger(Math.round(value * 100) / 10) ? value.toFixed(1) : value.toFixed(2)}×`;
+};
 
 export const stepRate = (rate, delta) => Math.round(Math.min(3, Math.max(0.5, rate + delta)) * 10) / 10;
 
