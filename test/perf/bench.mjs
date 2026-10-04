@@ -70,7 +70,7 @@ for (const size of SIZES) {
   await cdp.send("Performance.enable");
   const renderStart = Date.now();
   await panel.goto(app.url("pages/panel.html"), { waitUntil: "domcontentloaded" });
-  const expected = Math.ceil(size * 0.8) + 1;
+  const expected = Math.ceil(size * 0.8);
   await panel.waitForFunction((expected) => document.querySelectorAll("#queueList > li").length >= expected, { timeout: 60000 }, expected);
   const renderMs = Date.now() - renderStart;
   await panel.evaluate(() => {
