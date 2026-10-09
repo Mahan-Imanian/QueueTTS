@@ -23,32 +23,32 @@
 
 <img alt="Chrome with a blog post open and the QueueTTS popup below its toolbar button: a news article is being read aloud with the current word underlined, the open post is ready to add with Add to queue or Listen now, and the next two items wait under Up next" src=".github/assets/showcase.png" width="100%">
 
-Chrome can already read the page you're on. What it can't do is remember a reading list. QueueTTS keeps one in your browser: you add pages from any tab, they wait in order, and when you press play they're read one after another with the voices your computer and Chrome already have. Close the panel, switch tabs, pause for a week: the position is saved per sentence.
+QueueTTS is a Chrome extension that keeps a list of web pages and reads them aloud in order, using the text-to-speech voices Chrome already exposes. You add pages from any tab; the playback position is saved per sentence, so closing the panel, switching tabs or restarting Chrome does not lose your place.
 
 ## What it does
 
-### Save now, listen later
+### Adding pages
 
-Press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>, use the toolbar button or right-click. With text selected, only the selection is saved, and a small confirmation with *Undo* appears on the page. New items join the end of the queue and never interrupt what you're hearing; when an article ends, it moves to *Listened* and the next one starts.
+Press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>, use the toolbar button or right-click. With text selected, only the selection is saved, and a small confirmation with *Undo* appears on the page. New items join the end of the queue and do not interrupt what is playing; when an article ends, it moves to *Listened* and the next one starts.
 
 <img alt="A news article with one paragraph selected and the QueueTTS confirmation in the bottom-right corner of the page: Added, number 6 in queue, with an Undo link" src=".github/assets/f-save.png" width="100%">
 
-### It reads the article, not the page
+### Article extraction
 
-Navigation, cookie banners, share buttons, newsletter boxes, comments, captions, citation markers and hidden text are left out. Wikipedia, GitHub and MDN have dedicated handling; everything else goes through Mozilla Readability, then a fallback. Headings get a pause rather than an announcement, and code is skipped unless you ask for it.
+Navigation, cookie banners, share buttons, newsletter boxes, comments, captions, citation markers and hidden text are left out. Wikipedia, GitHub and MDN have site adapters; other pages go through Mozilla Readability, then a visible-DOM fallback. Headings get a pause rather than an announcement, and code is skipped unless you turn it on.
 
-### Follow along, pick up exactly where you stopped
+### Read-along and resume
 
-The side panel shows the sentence being read with the current word underlined, and a position bar marked with the article's real section headings. *Read along* shows the whole text; click any sentence to jump there. Pause, close Chrome, come back days later: it restarts the sentence you stopped on.
+The side panel shows the sentence being read with the current word underlined, and a position bar marked at each section heading. *Read along* shows the whole text; click any sentence to jump there. After a pause, including one across a Chrome restart, playback restarts the sentence you stopped on.
 
 <p align="center">
   <img alt="The side panel's reading window: the previous sentence in grey, the current sentence with the word being spoken underlined, and a position bar with a tick at each section heading" src=".github/assets/f-follow.png" width="49%">
   <img alt="Read-along mode in the dark theme: the whole article under a compact player, with the sentence being read highlighted and the current word underlined" src=".github/assets/f-readalong.png" width="49%">
 </p>
 
-### Stays out of the way
+### Queue controls
 
-Keyboard shortcuts, a numbered queue you can reorder by dragging or with <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>, a sleep timer, search, undo for every removal, a voice picker that marks which voices are online, and export and import of the whole queue.
+Keyboard shortcuts, a numbered queue you can reorder by dragging or with <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>, a sleep timer, search, undo for removals, a voice picker that marks which voices are online, and export and import of the whole queue (including backups made by version 2).
 
 <p align="center">
   <img alt="The Up next queue: four numbered articles with site names and listening times, a drag handle and play button on the hovered row, and a progress bar on a partly listened article" src=".github/assets/f-queue.png" width="49%">
@@ -123,6 +123,13 @@ flowchart LR
 
 The service worker is the only writer of queue and playback state. More in [docs/architecture.md](docs/architecture.md); timings in [docs/performance.md](docs/performance.md).
 
+## Design decisions
+
+- **No network code.** The queue, article text and settings stay in `chrome.storage.local`, and `npm run check` fails if a network API appears in `src/` or `pages/`. The cost: no sync between computers, no cloud voices, and site icons come only from Chrome's own favicon cache.
+- **`chrome.tts` for speech.** It works from the service worker with no page open (the Web Speech API needs a document), reports word boundaries for highlighting, and lists both local and Google voices. The cost: quality is limited to the voices installed on the machine, Google voices send the spoken text to Google, and SSML is not interpreted (Chrome passed it through as literal text with the voices tested).
+- **One writer for all state.** The popup, side panel, settings page, keyboard shortcuts, alarms and speech events can all change playback at the same time. Routing every change through the service worker's serialised task chain means they can't race or overwrite each other. The cost: every UI action is a message round trip, and the worker carries most of the logic (split across `src/background/`).
+- **No build step.** The repository folder is the extension: plain ES modules that Chrome loads directly, so what you read is what runs. The cost: no TypeScript or bundling, Readability is vendored by a copy script, and Chrome loads the whole folder, including `docs/` and `test/`.
+
 ## Voices
 
 QueueTTS speaks through Chrome's `chrome.tts` API, so it uses whatever voices Chrome exposes.
@@ -163,8 +170,9 @@ npm run test:e2e
 | Command | What it does |
 | --- | --- |
 | `npm run check` | Manifest, file references, syntax and the no-network rule |
-| `npm test` | 25 unit tests |
-| `npm run test:e2e` | 46 tests in your installed Chrome (set `CHROME_PATH` if needed) |
+| `npm test` | Unit tests for text processing, the queue, storage, import and voices |
+| `npm run test:e2e` | End-to-end tests in your installed Chrome (set `CHROME_PATH` if needed) |
+| `node test/perf/bench.mjs` | Queue-size benchmark with 10 to 1,000 articles (see [docs/performance.md](docs/performance.md)) |
 
 After editing, reload QueueTTS in `chrome://extensions`. Extraction fixes need a fixture in `test/fixtures` and a test in `test/e2e/extraction.test.js`.
 
