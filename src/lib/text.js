@@ -70,7 +70,7 @@ export const splitSentences = (text, lang = "en") => {
 
 const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-export const parsePronunciations = (list) => (Array.isArray(list) ? list : [])
+const parsePronunciations =(list) => (Array.isArray(list) ? list : [])
   .map((rule) => ({ from: normalizeSpace(rule?.from), to: normalizeSpace(rule?.to) }))
   .filter((rule) => rule.from && rule.to);
 
@@ -127,7 +127,7 @@ export const toSpeech = (text, pronunciations = [], { lang = "en", close = false
   return spoken;
 };
 
-export const PAUSE = { sentence: 0, paragraph: 260, heading: 480, list: 160 };
+const PAUSE ={ sentence: 0, paragraph: 260, heading: 480, list: 160 };
 
 export const buildPlan = (doc, { lang = "en", readCode = false, announceHeadings = false } = {}) => {
   const units = [];

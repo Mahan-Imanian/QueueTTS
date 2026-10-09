@@ -61,8 +61,6 @@ export const clearHistory = (queue) => ({ ...queue, items: queue.items.filter((i
 
 export const nextAfter = (queue, currentId) => queuedItems(queue).find((item) => item.id !== currentId) || null;
 
-export const previousDone = (queue) => historyItems(queue)[0] || null;
-
 export const mergeQueues = (base, incoming) => {
   const known = new Set(base.items.map((item) => item.id));
   const urls = new Set(base.items.filter((item) => item.url).map((item) => `${item.source}:${item.url}`));

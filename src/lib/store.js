@@ -13,7 +13,7 @@ export const isActive = (player) => ACTIVE_STATUSES.has(player.status);
 export const RATE_MIN = 0.5;
 export const RATE_MAX = 3;
 
-export const defaultSettings = () => ({
+const defaultSettings = () => ({
   voices: {},
   allowNetworkVoices: false,
   rate: 1,
