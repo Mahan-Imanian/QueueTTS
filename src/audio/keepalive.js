@@ -43,11 +43,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     start().then(sendResponse, (error) => sendResponse({ running: false, error: String(error) }));
     return true;
   }
-  if (message.action === "cool") {
-    until = 0;
-    stop().then(() => sendResponse({ running: false }));
-    return true;
-  }
   sendResponse({ running: Boolean(context && context.state === "running") });
   return false;
 });
