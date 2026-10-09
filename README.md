@@ -51,7 +51,7 @@ The side panel shows the sentence being read with the current word underlined, a
 Keyboard shortcuts, a numbered queue you can reorder by dragging or with <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>, a sleep timer, search, undo for removals, a voice picker that marks which voices are online, and export and import of the whole queue (including backups made by version 2).
 
 <p align="center">
-  <img alt="The Up next queue: four numbered articles with site names and listening times, a drag handle and play button on the hovered row, and a progress bar on a partly listened article" src=".github/assets/f-queue.png" width="49%">
+  <img alt="The Up next queue: four numbered articles with site names and listening times, a drag handle and play button on one row, and a progress bar on a partly listened article" src=".github/assets/f-queue.png" width="49%">
   <img alt="The voice picker: Automatic, then David, Mark and Zira listed as private voices on this computer, then Google voices marked as online with the text going to Google" src=".github/assets/f-voices.png" width="49%">
 </p>
 
@@ -125,7 +125,7 @@ The service worker is the only writer of queue and playback state. More in [docs
 
 ## Design decisions
 
-- **No network code.** The queue, article text and settings stay in `chrome.storage.local`, and `npm run check` fails if a network API appears in `src/` or `pages/`. The cost: no sync between computers, no cloud voices, and site icons come only from Chrome's own favicon cache.
+- **No network code.** Everything stays in `chrome.storage.local`, enforced by `npm run check` as described above. The cost: no sync between computers, no cloud voices, and site icons come only from Chrome's own favicon cache.
 - **`chrome.tts` for speech.** It works from the service worker with no page open (the Web Speech API needs a document), reports word boundaries for highlighting, and lists both local and Google voices. The cost: quality is limited to the voices installed on the machine, Google voices send the spoken text to Google, and SSML is not interpreted (Chrome passed it through as literal text with the voices tested).
 - **One writer for all state.** The popup, side panel, settings page, keyboard shortcuts, alarms and speech events can all change playback at the same time. Routing every change through the service worker's serialised task chain means they can't race or overwrite each other. The cost: every UI action is a message round trip, and the worker carries most of the logic (split across `src/background/`).
 - **No build step.** The repository folder is the extension: plain ES modules that Chrome loads directly, so what you read is what runs. The cost: no TypeScript or bundling, Readability is vendored by a copy script, and Chrome loads the whole folder, including `docs/` and `test/`.
