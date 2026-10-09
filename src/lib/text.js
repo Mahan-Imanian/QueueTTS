@@ -13,6 +13,9 @@ const MIN_WORD_CUT_CHARS = 80;
 const CLAUSE_BREAK = /(?<=[;:,])\s|\s(?=[–—]\s)|(?<=[，；：、])/g;
 
 export const CPS_DEFAULT = 15;
+export const CPS_MIN = 6;
+export const CPS_MAX = 40;
+export const MIN_SELECTION_WORDS = 3;
 
 export const normalizeSpace = (value) => String(value ?? "").replace(/[   ]/g, " ").replace(/[​-‍﻿]/g, "").replace(/\s+/g, " ").trim();
 
@@ -143,6 +146,10 @@ export const buildPlan = (doc, { lang = "en", readCode = false, announceHeadings
   });
   return { units, chars };
 };
+
+export const planKey = (item, settings) => `${item.id}|${settings.readCode}|${settings.announceHeadings}`;
+
+export const planForItem = (doc, item, settings) => buildPlan(doc, { lang: item.lang || "en", readCode: settings.readCode, announceHeadings: settings.announceHeadings });
 
 export const unitIndex = (plan, pos) => {
   if (!plan.units.length) return -1;

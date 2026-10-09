@@ -1,12 +1,17 @@
 import { emptyQueue, mergeQueues } from "./queue.js";
-import { canonicalUrl, CPS_DEFAULT, normalizeSpace, siteFromUrl, wordCount } from "./text.js";
+import { canonicalUrl, CPS_DEFAULT, CPS_MAX, CPS_MIN, normalizeSpace, siteFromUrl, wordCount } from "./text.js";
 
 export const SCHEMA = 3;
 export const KEYS = { settings: "settings", queue: "queue", player: "player", stats: "stats", schema: "schema" };
 export const docKey = (id) => `doc:${id}`;
-export const LEGACY_KEY = "queuetts:v2";
+const LEGACY_KEY = "queuetts:v2";
 
-export const PLAYER_STATUS = ["idle", "preparing", "playing", "paused", "stopped", "completed", "error", "recovering"];
+const PLAYER_STATUS = ["idle", "preparing", "playing", "paused", "stopped", "completed", "error", "recovering"];
+export const ACTIVE_STATUSES = new Set(["playing", "preparing", "recovering"]);
+export const isActive = (player) => ACTIVE_STATUSES.has(player.status);
+
+export const RATE_MIN = 0.5;
+export const RATE_MAX = 3;
 
 export const defaultSettings = () => ({
   voices: {},
@@ -41,7 +46,7 @@ export const normalizeSettings = (raw = {}) => {
   return {
     voices,
     allowNetworkVoices: Boolean(value.allowNetworkVoices),
-    rate: finite(value.rate, base.rate, 0.5, 3),
+    rate: finite(value.rate, base.rate, RATE_MIN, RATE_MAX),
     pitch: finite(value.pitch, base.pitch, 0, 2),
     volume: finite(value.volume, base.volume, 0, 1),
     autoAdvance: value.autoAdvance !== false,
@@ -49,7 +54,7 @@ export const normalizeSettings = (raw = {}) => {
     announceHeadings: Boolean(value.announceHeadings),
     theme: ["system", "light", "dark"].includes(value.theme) ? value.theme : base.theme,
     pronunciations: Array.isArray(value.pronunciations) ? value.pronunciations.filter((rule) => rule && rule.from && rule.to).map((rule) => ({ from: String(rule.from), to: String(rule.to) })) : [],
-    cps: finite(value.cps, base.cps, 6, 40),
+    cps: finite(value.cps, base.cps, CPS_MIN, CPS_MAX),
     onboarded: Boolean(value.onboarded)
   };
 };
@@ -94,6 +99,18 @@ export const normalizeQueue = (raw) => {
 };
 
 export const normalizeStats = (raw) => ({ days: raw?.days && typeof raw.days === "object" ? raw.days : {} });
+
+export const upgradeStorage = async () => {
+  const stored = await chrome.storage.local.get([KEYS.schema, LEGACY_KEY]);
+  if (stored[KEYS.schema] === SCHEMA) return;
+  if (stored[LEGACY_KEY]) {
+    const migrated = migrateLegacy(stored[LEGACY_KEY]);
+    await chrome.storage.local.set({ [KEYS.settings]: migrated.settings, [KEYS.queue]: migrated.queue, [KEYS.player]: defaultPlayer(), ...migrated.docs, [KEYS.schema]: SCHEMA });
+    await chrome.storage.local.remove(LEGACY_KEY);
+  } else {
+    await chrome.storage.local.set({ [KEYS.schema]: SCHEMA });
+  }
+};
 
 export const readAll = async () => {
   const data = await chrome.storage.local.get([KEYS.settings, KEYS.queue, KEYS.player, KEYS.stats]);
