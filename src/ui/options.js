@@ -1,6 +1,6 @@
 import { docKey, normalizeQueue, parseExport, planImport, SCHEMA } from "../lib/store.js";
-import { baseLang, describeVoice as voiceInfo, languageName, rankVoices } from "../lib/voices.js";
-import { $, applyTheme, createStore, escape, h, historyItems, icon, isActive, queuedItems, send, speedLabel, toast } from "./common.js";
+import { baseLang, describeVoice, languageName, rankVoices } from "../lib/voices.js";
+import { $, applyTheme, createStore, escape, formatBytes, h, historyItems, icon, queuedItems, send, speedLabel, toast } from "./common.js";
 import { preview } from "./deck.js";
 
 const IMPORT_BATCH_ITEMS = 50;
@@ -65,7 +65,7 @@ const renderVoiceList = async () => {
   const inLanguage = rankVoices(voices, { lang: voiceLanguage, allowNetwork: true }).filter((voice) => baseLang(voice.lang) === voiceLanguage);
   const ranked = [...inLanguage.filter((voice) => !voice.remote), ...inLanguage.filter((voice) => voice.remote)];
   const row = (voice) => {
-    const info = voiceInfo(voice);
+    const info = describeVoice(voice);
     const blocked = info.remote && !store.settings.allowNetworkVoices;
     return `<label class="voice-row${blocked ? " muted" : ""}">
       <input type="radio" name="voice" value="${escape(voice.voiceName)}" ${voice.voiceName === chosen ? "checked" : ""} />
@@ -75,12 +75,12 @@ const renderVoiceList = async () => {
   };
   els.voiceList.innerHTML = `<label class="voice-row">
       <input type="radio" name="voice" value="" ${chosen ? "" : "checked"} />
-      <span class="voice-text"><span class="voice-label">Automatic</span><span class="voice-detail">${automatic ? `Currently ${escape(voiceInfo(automatic).label)}, ${automatic.remote ? "online" : "on this computer"}` : "No voice available"}</span></span>
+      <span class="voice-text"><span class="voice-label">Automatic</span><span class="voice-detail">${automatic ? `Currently ${escape(describeVoice(automatic).label)}, ${automatic.remote ? "online" : "on this computer"}` : "No voice available"}</span></span>
       <span></span>
     </label>${ranked.map(row).join("")}`;
 };
 
-const describeVoice = async () => {
+const renderVoicePrivacy = async () => {
   const resolved = (await send("resolvedVoice", voiceLanguage)).voice;
   els.voicePrivacy.textContent = resolved?.remote
     ? `Your ${languageName(voiceLanguage)} voice is an online Google voice, so the text being read is sent to Google while you listen.`
@@ -99,7 +99,7 @@ const renderDiagnostics = async () => {
   const rows = [
     ["Last start", start && firstSound != null ? `${Math.round(firstSound)} ms from Play to the first spoken word${at("text ready") != null ? ` (QueueTTS ${Math.round(at("speak called") ?? 0)} ms, speech engine ${Math.round(firstSound - (at("speak called") ?? 0))} ms)` : ""}` : "Play something to measure"],
     ["Voice", start?.marks?.find((entry) => entry.name === "voice ready")?.voice || "Not used yet"],
-    ["Stored", `${bytes > 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`} in this browser`],
+    ["Stored", `${formatBytes(bytes)} in this browser`],
     ["Chrome", chrome_]
   ];
   els.diagnostics.replaceChildren(...rows.flatMap(([term, value]) => [h("dt", { text: term }), h("dd", { text: value })]));
@@ -124,7 +124,7 @@ const fill = () => {
   els.announceHeadings.checked = settings.announceHeadings;
   for (const radio of document.querySelectorAll("[name='theme']")) radio.checked = radio.value === settings.theme;
   renderPronunciations();
-  describeVoice();
+  renderVoicePrivacy();
 };
 
 const renderPronunciations = () => {
@@ -140,21 +140,15 @@ const renderPronunciations = () => {
 };
 
 const speak = async (text) => {
-  if (isActive(store.player)) await send("pause");
-  const settings = store.settings;
-  const options = { rate: settings.rate, pitch: settings.pitch, volume: settings.volume || 1 };
-  const chosen = settings.voices[voiceLanguage] || (await send("resolvedVoice", voiceLanguage)).voice?.voiceName;
-  if (chosen) options.voiceName = chosen;
-  chrome.tts.stop();
-  chrome.tts.speak(text, options);
+  const chosen = store.settings.voices[voiceLanguage] || (await send("resolvedVoice", voiceLanguage)).voice?.voiceName;
+  preview(chosen, store.settings, store.player, text);
 };
 
 const usage = async () => {
   const bytes = await chrome.storage.local.getBytesInUse(null);
   const queued = queuedItems(store.queue).length;
   const done = historyItems(store.queue).length;
-  const size = bytes > 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  els.usage.textContent = `${queued} in the queue, ${done} in history, using ${size} on this computer.`;
+  els.usage.textContent = `${queued} in the queue, ${done} in history, using ${formatBytes(bytes)} on this computer.`;
 };
 
 const ask = (title, text, ok) => new Promise((resolve) => {
@@ -169,7 +163,7 @@ const ask = (title, text, ok) => new Promise((resolve) => {
 els.voiceLang.addEventListener("change", () => {
   voiceLanguage = els.voiceLang.value;
   renderVoiceList();
-  describeVoice();
+  renderVoicePrivacy();
 });
 els.voiceList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-preview]");
