@@ -21,7 +21,7 @@
 
 <br>
 
-<img alt="The QueueTTS popup over a news article: one article is playing with the current word underlined, a selected paragraph is ready to add, and two more items wait in the queue" src=".github/assets/showcase.png" width="100%">
+<img alt="Chrome with a blog post open and the QueueTTS popup below its toolbar button: a news article is being read aloud with the current word underlined, the open post is ready to add with Add to queue or Listen now, and the next two items wait under Up next" src=".github/assets/showcase.png" width="100%">
 
 Chrome can already read the page you're on. What it can't do is remember a reading list. QueueTTS keeps one in your browser: you add pages from any tab, they wait in order, and when you press play they're read one after another with the voices your computer and Chrome already have. Close the panel, switch tabs, pause for a week: the position is saved per sentence.
 
@@ -31,6 +31,8 @@ Chrome can already read the page you're on. What it can't do is remember a readi
 
 Press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>, use the toolbar button or right-click. With text selected, only the selection is saved, and a small confirmation with *Undo* appears on the page. New items join the end of the queue and never interrupt what you're hearing; when an article ends, it moves to *Listened* and the next one starts.
 
+<img alt="A news article with one paragraph selected and the QueueTTS confirmation in the bottom-right corner of the page: Added, number 6 in queue, with an Undo link" src=".github/assets/f-save.png" width="100%">
+
 ### It reads the article, not the page
 
 Navigation, cookie banners, share buttons, newsletter boxes, comments, captions, citation markers and hidden text are left out. Wikipedia, GitHub and MDN have dedicated handling; everything else goes through Mozilla Readability, then a fallback. Headings get a pause rather than an announcement, and code is skipped unless you ask for it.
@@ -39,16 +41,19 @@ Navigation, cookie banners, share buttons, newsletter boxes, comments, captions,
 
 The side panel shows the sentence being read with the current word underlined, and a position bar marked with the article's real section headings. *Read along* shows the whole text; click any sentence to jump there. Pause, close Chrome, come back days later: it restarts the sentence you stopped on.
 
-<img alt="The side panel docked beside an article: the current article with its reading window and section ruler, the numbered Up next queue, and listened items grouped by day" src=".github/assets/f-workspace.png" width="100%">
-
 <p align="center">
-  <img alt="Three views of the side panel: the queue in dark mode, read-along mode with the current sentence highlighted, and the voice picker" src=".github/assets/f-states.png" width="49%">
-  <img alt="Settings: voices for the chosen language, ranked and labelled as standard local or online, each with a preview button" src=".github/assets/f-settings.png" width="49%">
+  <img alt="The side panel's reading window: the previous sentence in grey, the current sentence with the word being spoken underlined, and a position bar with a tick at each section heading" src=".github/assets/f-follow.png" width="49%">
+  <img alt="Read-along mode in the dark theme: the whole article under a compact player, with the sentence being read highlighted and the current word underlined" src=".github/assets/f-readalong.png" width="49%">
 </p>
 
 ### Stays out of the way
 
-Keyboard shortcuts, a numbered queue you can reorder by dragging or with <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>, a sleep timer, search, undo for every removal, and export and import of the whole queue.
+Keyboard shortcuts, a numbered queue you can reorder by dragging or with <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>, a sleep timer, search, undo for every removal, a voice picker that marks which voices are online, and export and import of the whole queue.
+
+<p align="center">
+  <img alt="The Up next queue: four numbered articles with site names and listening times, a drag handle and play button on the hovered row, and a progress bar on a partly listened article" src=".github/assets/f-queue.png" width="49%">
+  <img alt="The voice picker: Automatic, then David, Mark and Zira listed as private voices on this computer, then Google voices marked as online with the text going to Google" src=".github/assets/f-voices.png" width="49%">
+</p>
 
 ## Install
 
@@ -168,7 +173,7 @@ After editing, reload QueueTTS in `chrome://extensions`. Extraction fixes need a
 | `pages/` | Popup, side panel, settings, welcome and offscreen pages |
 | `src/` | Service worker, extractor, shared logic, UI, vendored Readability |
 | `styles/` | CSS |
-| `assets/` | Icons and screenshots |
+| `assets/` | Icons and the social preview image |
 | `scripts/` | Check and vendor scripts |
 | `test/` | Unit, end-to-end and perf tests, page fixtures |
 | `docs/` | Architecture, performance and limitations notes |
