@@ -160,5 +160,3 @@ No on-page highlighting, PDF support or sync between computers yet; English inte
 ## License
 
 No license has been chosen yet, so all rights are reserved for now. The vendored Mozilla Readability is under the Apache License 2.0 (`src/vendor/READABILITY-LICENSE.md`).
-
-<!-- TODO(mahan): choose a license -->
