@@ -1,6 +1,6 @@
 import { findItem } from "../lib/queue.js";
-import { wordCount } from "../lib/text.js";
-import { $, applyTheme, connectSpeech, createStore, escape, favicon, formatDuration, h, historyItems, icon, isActive, itemRemaining, keyed, queuedItems, send, typing } from "./common.js";
+import { MIN_SELECTION_WORDS, wordCount } from "../lib/text.js";
+import { $, applyTheme, connectSpeech, createStore, escape, favicon, formatDuration, h, historyItems, icon, isActive, itemRemaining, keyed, queuedItems, renderHealth, send, typing } from "./common.js";
 import { mountDeck } from "./deck.js";
 import { createRow, updateRow } from "./rows.js";
 
@@ -76,7 +76,7 @@ const renderHere = () => {
     return;
   }
   els.hereTitle.textContent = context.title;
-  if (context.selectionWords >= 3) {
+  if (context.selectionWords >= MIN_SELECTION_WORDS) {
     els.hereMeta.textContent = `${context.selectionWords} words selected on this page`;
     els.hereActions.append(action("Add selection", true, () => capture("selection", "end"), "plus"), action("Listen now", false, () => capture("selection", "now"), "play"));
     return;
@@ -140,7 +140,7 @@ els.pasteCancel.addEventListener("click", () => togglePaste(false));
 els.pasteText.addEventListener("input", () => {
   const count = wordCount(els.pasteText.value);
   els.pasteCount.textContent = count ? `${count} words` : "";
-  els.pasteAdd.disabled = count < 3;
+  els.pasteAdd.disabled = count < MIN_SELECTION_WORDS;
 });
 const addPaste = async () => {
   if (els.pasteAdd.disabled) return;
@@ -183,15 +183,6 @@ els.nextList.addEventListener("click", (event) => {
 });
 els.more.addEventListener("click", openPanel);
 
-const renderHealth = () => {
-  const message = store.health?.storage;
-  els.health.hidden = !message;
-  if (message) {
-    els.health.innerHTML = `${icon("alert", "sm")}<p></p>`;
-    els.health.querySelector("p").textContent = message;
-  }
-};
-
 function render(changed = new Set(["player", "queue", "settings", "health"]), snapshot = store) {
   store = snapshot;
   applyTheme(store.settings);
@@ -205,7 +196,7 @@ function render(changed = new Set(["player", "queue", "settings", "health"]), sn
     renderNext();
     renderHere();
   }
-  if (changed.has("health")) renderHealth();
+  if (changed.has("health")) renderHealth(els.health, store.health);
 }
 
 const refreshContext = async () => {
@@ -228,12 +219,12 @@ document.addEventListener("keydown", (event) => {
     send("toggle");
   } else if (event.key === "ArrowLeft") send("skip", -1);
   else if (event.key === "ArrowRight") send("skip", 1);
-  else if (event.key === "-" || event.key === "[") deck.changeRate(-0.1);
-  else if (event.key === "=" || event.key === "+" || event.key === "]") deck.changeRate(0.1);
+  else if (event.key === "-" || event.key === "[") deck.slower();
+  else if (event.key === "=" || event.key === "+" || event.key === "]") deck.faster();
 });
 
 connectSpeech((message) => deck.onSpeech(message));
 render();
-renderHealth();
+renderHealth(els.health, store.health);
 setHint();
 refreshContext();

@@ -1,8 +1,10 @@
 import { historyItems, queuedItems } from "../lib/queue.js";
-import { KEYS, normalizePlayer, normalizeQueue, normalizeSettings, normalizeStats, readAll } from "../lib/store.js";
-import { CPS_DEFAULT, formatDuration, localDay, remainingSeconds } from "../lib/text.js";
+import { isActive, KEYS, normalizePlayer, normalizeQueue, normalizeSettings, normalizeStats, RATE_MAX, RATE_MIN, readAll } from "../lib/store.js";
+import { CPS_DEFAULT, formatDuration, localDay, remainingSeconds, wordIndexAt } from "../lib/text.js";
 
-export { formatDuration, historyItems, queuedItems };
+export { formatDuration, historyItems, isActive, queuedItems };
+
+export const DAY_MS = 86400000;
 
 export const $ = (selector, root = document) => root.querySelector(selector);
 
@@ -32,7 +34,7 @@ export const h = (tag, attrs = {}, ...children) => {
   return node;
 };
 
-export const faviconUrl = (url) => {
+const faviconUrl =(url) => {
   if (!url) return "";
   const target = new URL(chrome.runtime.getURL("/_favicon/"));
   target.searchParams.set("pageUrl", url);
@@ -61,25 +63,12 @@ export const itemRemaining = (item, settings, playerProgress) => {
 
 export const sourceLabel = (item) => (item.source === "selection" ? "Selection" : item.source === "paste" ? "Pasted text" : item.source === "sample" ? "QueueTTS" : item.site || "Web page");
 
-export const statusText = (player) => ({
-  playing: "Playing",
-  preparing: "Starting…",
-  recovering: "Resuming…",
-  paused: "Paused",
-  stopped: "Stopped",
-  completed: "Finished",
-  error: "Couldn’t play",
-  idle: "Ready"
-})[player.status] || "Ready";
-
-export const isActive = (player) => ["playing", "preparing", "recovering"].includes(player.status);
-
 export const weekSummary = (stats) => {
   const now = new Date();
   let ms = 0;
   let finished = 0;
   for (let offset = 0; offset < 7; offset += 1) {
-    const day = stats.days[localDay(now.getTime() - offset * 86400000)];
+    const day = stats.days[localDay(now.getTime() - offset * DAY_MS)];
     if (day) {
       ms += day.ms || 0;
       finished += day.finished || 0;
@@ -219,7 +208,7 @@ export const openMenu = (anchor, entries) => {
   }
 };
 
-export const closeMenu = () => document.querySelector(".menu")?.remove();
+const closeMenu =() => document.querySelector(".menu")?.remove();
 
 export const typing = (event) => {
   const target = event.target;
@@ -231,7 +220,26 @@ export const speedLabel = (rate) => {
   return `${Number.isInteger(Math.round(value * 100) / 10) ? value.toFixed(1) : value.toFixed(2)}×`;
 };
 
-export const stepRate = (rate, delta) => Math.round(Math.min(3, Math.max(0.5, rate + delta)) * 10) / 10;
+export const stepRate = (rate, delta) => Math.round(Math.min(RATE_MAX, Math.max(RATE_MIN, rate + delta)) * 10) / 10;
+
+export const renderHealth = (container, health) => {
+  const message = health?.storage;
+  container.hidden = !message;
+  if (message) {
+    container.innerHTML = `${icon("alert", "sm")}<p></p>`;
+    container.querySelector("p").textContent = message;
+  }
+};
+
+export const formatBytes = (bytes) => (bytes > 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
+
+export const displayWordIndex = (spoken, charIndex, shown) => {
+  const spokenIndex = wordIndexAt(spoken, charIndex);
+  const spokenWords = (spoken.match(/\S+/g) || []).length;
+  const shownWords = (shown.match(/\S+/g) || []).length;
+  const index = spokenWords === shownWords ? spokenIndex : Math.round((spokenIndex / Math.max(1, spokenWords)) * shownWords);
+  return Math.max(0, Math.min(shownWords - 1, index));
+};
 
 export const renderSentence = (container, text, wordIndex = -1) => {
   if (wordIndex < 0) {

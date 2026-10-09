@@ -1,7 +1,9 @@
-import { normalizeQueue } from "../lib/store.js";
-import { baseLang, describeVoice as voiceInfo, languageName, rankVoices } from "../lib/voices.js";
-import { $, applyTheme, createStore, escape, h, historyItems, icon, isActive, queuedItems, send, speedLabel, toast } from "./common.js";
+import { docKey, normalizeQueue, parseExport, planImport, SCHEMA } from "../lib/store.js";
+import { baseLang, describeVoice, languageName, rankVoices } from "../lib/voices.js";
+import { $, applyTheme, createStore, escape, formatBytes, h, historyItems, icon, queuedItems, send, speedLabel, toast } from "./common.js";
 import { preview } from "./deck.js";
+
+const IMPORT_BATCH_ITEMS = 50;
 
 const els = {
   voiceLang: $("#voiceLang"),
@@ -63,7 +65,7 @@ const renderVoiceList = async () => {
   const inLanguage = rankVoices(voices, { lang: voiceLanguage, allowNetwork: true }).filter((voice) => baseLang(voice.lang) === voiceLanguage);
   const ranked = [...inLanguage.filter((voice) => !voice.remote), ...inLanguage.filter((voice) => voice.remote)];
   const row = (voice) => {
-    const info = voiceInfo(voice);
+    const info = describeVoice(voice);
     const blocked = info.remote && !store.settings.allowNetworkVoices;
     return `<label class="voice-row${blocked ? " muted" : ""}">
       <input type="radio" name="voice" value="${escape(voice.voiceName)}" ${voice.voiceName === chosen ? "checked" : ""} />
@@ -73,12 +75,12 @@ const renderVoiceList = async () => {
   };
   els.voiceList.innerHTML = `<label class="voice-row">
       <input type="radio" name="voice" value="" ${chosen ? "" : "checked"} />
-      <span class="voice-text"><span class="voice-label">Automatic</span><span class="voice-detail">${automatic ? `Currently ${escape(voiceInfo(automatic).label)}, ${automatic.remote ? "online" : "on this computer"}` : "No voice available"}</span></span>
+      <span class="voice-text"><span class="voice-label">Automatic</span><span class="voice-detail">${automatic ? `Currently ${escape(describeVoice(automatic).label)}, ${automatic.remote ? "online" : "on this computer"}` : "No voice available"}</span></span>
       <span></span>
     </label>${ranked.map(row).join("")}`;
 };
 
-const describeVoice = async () => {
+const renderVoicePrivacy = async () => {
   const resolved = (await send("resolvedVoice", voiceLanguage)).voice;
   els.voicePrivacy.textContent = resolved?.remote
     ? `Your ${languageName(voiceLanguage)} voice is an online Google voice, so the text being read is sent to Google while you listen.`
@@ -97,7 +99,7 @@ const renderDiagnostics = async () => {
   const rows = [
     ["Last start", start && firstSound != null ? `${Math.round(firstSound)} ms from Play to the first spoken word${at("text ready") != null ? ` (QueueTTS ${Math.round(at("speak called") ?? 0)} ms, speech engine ${Math.round(firstSound - (at("speak called") ?? 0))} ms)` : ""}` : "Play something to measure"],
     ["Voice", start?.marks?.find((entry) => entry.name === "voice ready")?.voice || "Not used yet"],
-    ["Stored", `${bytes > 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`} in this browser`],
+    ["Stored", `${formatBytes(bytes)} in this browser`],
     ["Chrome", chrome_]
   ];
   els.diagnostics.replaceChildren(...rows.flatMap(([term, value]) => [h("dt", { text: term }), h("dd", { text: value })]));
@@ -122,7 +124,7 @@ const fill = () => {
   els.announceHeadings.checked = settings.announceHeadings;
   for (const radio of document.querySelectorAll("[name='theme']")) radio.checked = radio.value === settings.theme;
   renderPronunciations();
-  describeVoice();
+  renderVoicePrivacy();
 };
 
 const renderPronunciations = () => {
@@ -138,21 +140,15 @@ const renderPronunciations = () => {
 };
 
 const speak = async (text) => {
-  if (isActive(store.player)) await send("pause");
-  const settings = store.settings;
-  const options = { rate: settings.rate, pitch: settings.pitch, volume: settings.volume || 1 };
-  const chosen = settings.voices[voiceLanguage] || (await send("resolvedVoice", voiceLanguage)).voice?.voiceName;
-  if (chosen) options.voiceName = chosen;
-  chrome.tts.stop();
-  chrome.tts.speak(text, options);
+  const chosen = store.settings.voices[voiceLanguage] || (await send("resolvedVoice", voiceLanguage)).voice?.voiceName;
+  preview(chosen, store.settings, store.player, text);
 };
 
 const usage = async () => {
   const bytes = await chrome.storage.local.getBytesInUse(null);
   const queued = queuedItems(store.queue).length;
   const done = historyItems(store.queue).length;
-  const size = bytes > 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  els.usage.textContent = `${queued} in the queue, ${done} in history, using ${size} on this computer.`;
+  els.usage.textContent = `${queued} in the queue, ${done} in history, using ${formatBytes(bytes)} on this computer.`;
 };
 
 const ask = (title, text, ok) => new Promise((resolve) => {
@@ -167,7 +163,7 @@ const ask = (title, text, ok) => new Promise((resolve) => {
 els.voiceLang.addEventListener("change", () => {
   voiceLanguage = els.voiceLang.value;
   renderVoiceList();
-  describeVoice();
+  renderVoicePrivacy();
 });
 els.voiceList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-preview]");
@@ -210,9 +206,8 @@ els.pronForm.addEventListener("submit", (event) => {
 $("#editShortcuts").addEventListener("click", () => chrome.tabs.create({ url: "chrome://extensions/shortcuts" }));
 
 $("#export").addEventListener("click", async () => {
-  const keys = store.queue.items.map((item) => `doc:${item.id}`);
-  const docs = await chrome.storage.local.get(keys);
-  const payload = { app: "QueueTTS", schema: 3, exportedAt: new Date().toISOString(), settings: store.settings, queue: store.queue, docs: Object.fromEntries(store.queue.items.map((item) => [item.id, docs[`doc:${item.id}`]]).filter(([, doc]) => doc)) };
+  const docs = await chrome.storage.local.get(store.queue.items.map((item) => docKey(item.id)));
+  const payload = { app: "QueueTTS", schema: SCHEMA, exportedAt: new Date().toISOString(), settings: store.settings, queue: store.queue, docs: Object.fromEntries(store.queue.items.map((item) => [item.id, docs[docKey(item.id)]]).filter(([, doc]) => doc)) };
   const url = URL.createObjectURL(new Blob([JSON.stringify(payload)], { type: "application/json" }));
   const link = h("a", { href: url, download: `queuetts-${new Date().toISOString().slice(0, 10)}.json` });
   link.click();
@@ -225,21 +220,20 @@ $("#importFile").addEventListener("change", async () => {
   const file = $("#importFile").files[0];
   $("#importFile").value = "";
   if (!file) return;
-  let data;
-  try {
-    data = JSON.parse(await file.text());
-  } catch {
-    return toast("That file isn’t a QueueTTS export.");
+  const parsed = parseExport(await file.text());
+  if (!parsed.ok) return toast(parsed.message);
+  const fresh = planImport(store.queue, parsed).added;
+  if (!fresh) return toast("Everything in that file is already here, or has no readable text.");
+  if (!(await ask("Import queue", `Add ${fresh} ${fresh === 1 ? "item" : "items"} from this file to your queue? Nothing you have now is replaced.`, "Import"))) return;
+  const items = normalizeQueue(parsed.queue).items;
+  let added = 0;
+  for (let start = 0; start < items.length; start += IMPORT_BATCH_ITEMS) {
+    const batch = items.slice(start, start + IMPORT_BATCH_ITEMS);
+    const result = await send("importData", { queue: { items: batch }, docs: Object.fromEntries(batch.map((item) => [item.id, parsed.docs[item.id]])) });
+    if (!result.ok) return toast(`${added ? `Imported ${added}, then stopped: ` : ""}${result.message || "Import failed."}`);
+    added += result.added;
   }
-  if (data?.app !== "QueueTTS" || !data.queue) return toast("That file isn’t a QueueTTS export.");
-  const incoming = normalizeQueue(data.queue);
-  const known = new Set(store.queue.items.map((item) => item.id));
-  const fresh = incoming.items.filter((item) => !known.has(item.id)).length;
-  if (!fresh) return toast("Everything in that file is already here.");
-  const keepSettings = await ask("Import queue", `Add ${fresh} ${fresh === 1 ? "item" : "items"} from this file to your queue? Nothing you have now is replaced.`, "Import");
-  if (!keepSettings) return;
-  const result = await send("importData", { queue: data.queue, docs: data.docs || {} });
-  toast(result.ok ? `Imported ${result.added} ${result.added === 1 ? "item" : "items"}` : result.message || "Import failed.");
+  toast(`Imported ${added} ${added === 1 ? "item" : "items"}`);
 });
 
 $("#clearHistory").addEventListener("click", async () => {

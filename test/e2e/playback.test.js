@@ -1,5 +1,8 @@
 import { after, before, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { buildCopy, launch, localVoiceAvailable, sentences, sleep } from "./harness.mjs";
 
 let app;
@@ -143,8 +146,11 @@ test("a service worker killed mid-sentence recovers and keeps reading (watchdog,
 
 test("the UI never shows Playing after a browser restart, and the first press plays", { skip: false, timeout: 120000 }, async (t) => {
   const extension = buildCopy();
-  const profile = (await import("node:fs")).mkdtempSync((await import("node:path")).join((await import("node:os")).tmpdir(), "qtts-restart-"));
-  let first = await launch({ extension, profile });
+  const profile = mkdtempSync(join(tmpdir(), "qtts-restart-"));
+  t.after(() => {
+    for (const dir of [profile, extension]) rmSync(dir, { recursive: true, force: true, maxRetries: 5 });
+  });
+  const first = await launch({ extension, profile });
   if (!(await localVoiceAvailable(first))) {
     await first.close({ keepProfile: true });
     return t.skip("no local voice");

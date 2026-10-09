@@ -1,4 +1,4 @@
-import { favicon, formatDuration, h, icon, isActive, itemRemaining, sourceLabel } from "./common.js";
+import { DAY_MS, favicon, formatDuration, h, icon, isActive, itemRemaining, sourceLabel } from "./common.js";
 
 const FRESH_MS = 15 * 60 * 1000;
 
@@ -11,7 +11,7 @@ export const createRow = () => {
 const dayLabel = (time) => {
   const date = new Date(time);
   const today = new Date();
-  const days = Math.round((new Date(today.toDateString()) - new Date(date.toDateString())) / 86400000);
+  const days = Math.round((new Date(today.toDateString()) - new Date(date.toDateString())) / DAY_MS);
   if (days <= 0) return "Today";
   if (days === 1) return "Yesterday";
   if (days < 7) return date.toLocaleDateString(undefined, { weekday: "long" });

@@ -237,6 +237,34 @@ test("settings controls save immediately, including switches and theme", async (
   await app.send("settings", { readCode: false, theme: "system", rate: 2 });
 });
 
+test("import adds a large export in batches, skips duplicates and rejects newer schemas", async () => {
+  const items = Array.from({ length: 120 }, (_, index) => ({ id: `imp${index}`, title: `Imported ${index}`, url: `https://import.example/${index}`, source: "page", status: "queued" }));
+  const docs = Object.fromEntries(items.map((item) => [item.id, { blocks: [{ k: "p", t: `Imported article ${item.id} has some text.` }] }]));
+  const options = await openPage("pages/options.html", 1000);
+  const pick = (payload) => options.evaluate((json) => {
+    const input = document.querySelector("#importFile");
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([json], "queuetts.json", { type: "application/json" }));
+    input.files = transfer.files;
+    input.dispatchEvent(new Event("change"));
+  }, JSON.stringify(payload));
+  const toastText = () => options.waitForFunction(() => document.querySelector(".toast")?.textContent).then((handle) => handle.jsonValue());
+
+  await pick({ app: "QueueTTS", schema: 4, queue: { items }, docs });
+  assert.match(await toastText(), /newer version/);
+  await pick({ app: "QueueTTS", schema: 3, queue: { items: [...items, items[0]] }, docs });
+  await options.waitForSelector("#confirm[open]");
+  assert.match(await options.$eval("#confirmText", (node) => node.textContent), /Add 120 items/);
+  await options.click("#confirmOk");
+  await app.waitFor(async () => (await app.queue()).length === 120, { label: "all batches imported", timeout: 30000 });
+  await options.waitForFunction(() => /Imported 120 items/.test(document.querySelector(".toast")?.textContent || ""));
+  const stored = await app.storage(["doc:imp0", "doc:imp119"]);
+  assert.equal(stored["doc:imp119"].blocks[0].t, "Imported article imp119 has some text.");
+  await pick({ app: "QueueTTS", schema: 3, queue: { items }, docs });
+  await options.waitForFunction(() => /already here/.test(document.querySelector(".toast")?.textContent || ""));
+  await options.close();
+});
+
 test("the reading view highlights the sentence being read and seeks on click", async () => {
   await fakeSpeech();
   const a = (await app.send("addText", sentences(30, "Reader"), "Reading test")).item;

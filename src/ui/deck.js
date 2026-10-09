@@ -1,22 +1,22 @@
 import { findItem, queuedItems } from "../lib/queue.js";
 import { readDoc } from "../lib/store.js";
-import { buildPlan, CPS_DEFAULT, formatClock, formatDuration, unitIndex, wordIndexAt } from "../lib/text.js";
+import { CPS_DEFAULT, formatClock, formatDuration, planForItem, planKey, unitIndex } from "../lib/text.js";
 import { baseLang, describeVoice, rankVoices, shortVoiceName } from "../lib/voices.js";
-import { $, escape, favicon, h, icon, isActive, renderSentence, send, sourceLabel, speedLabel, stepRate, toast } from "./common.js";
+import { $, displayWordIndex, escape, favicon, h, icon, isActive, openMenu, renderSentence, send, sourceLabel, speedLabel, stepRate, toast } from "./common.js";
 
 const planCache = { key: "", plan: null, doc: null };
 
 export const planFor = async (item, settings) => {
-  const key = `${item.id}|${settings.readCode}|${settings.announceHeadings}`;
+  const key = planKey(item, settings);
   if (planCache.key === key) return planCache;
   const doc = await readDoc(item.id);
   planCache.key = key;
   planCache.doc = doc;
-  planCache.plan = doc ? buildPlan(doc, { lang: item.lang || "en", readCode: settings.readCode, announceHeadings: settings.announceHeadings }) : null;
+  planCache.plan = doc ? planForItem(doc, item, settings) : null;
   return planCache;
 };
 
-export const STATUS = {
+const STATUS = {
   playing: "Reading aloud",
   preparing: "Starting…",
   recovering: "Resuming where you left off…",
@@ -26,9 +26,11 @@ export const STATUS = {
   idle: "Ready"
 };
 
-export const statusFor = (player, progress) => (player.status === "paused" ? (progress > 0 ? "Paused" : "Ready to play") : STATUS[player.status] || "Ready");
+const statusFor =(player, progress) => (player.status === "paused" ? (progress > 0 ? "Paused" : "Ready to play") : STATUS[player.status] || "Ready");
 
 const PRESETS = [0.8, 1, 1.25, 1.5, 2];
+const RATE_STEP = 0.1;
+const RATE_SAVE_DELAY_MS = 300;
 const SAMPLE = "Here’s how this voice sounds. On 4 October 2026, the queue had 12 articles: about 40 minutes of listening.";
 
 let voiceCache = null;
@@ -37,12 +39,12 @@ const loadVoices = async (force = false) => {
   return voiceCache;
 };
 
-export const preview = async (voiceName, settings, player) => {
+export const preview = async (voiceName, settings, player, text = SAMPLE) => {
   if (isActive(player)) await send("pause");
   chrome.tts.stop();
   const options = { rate: settings.rate, pitch: settings.pitch, volume: settings.volume || 1 };
   if (voiceName) options.voiceName = voiceName;
-  chrome.tts.speak(SAMPLE, options);
+  chrome.tts.speak(text, options);
 };
 
 export const mountDeck = (root, { compact = false, onReadAlong = null } = {}) => {
@@ -126,7 +128,7 @@ export const mountDeck = (root, { compact = false, onReadAlong = null } = {}) =>
       const value = pendingRate;
       pendingRate = null;
       await send("settings", { rate: value });
-    }, 300);
+    }, RATE_SAVE_DELAY_MS);
   };
 
   const changeRate = (delta) => commitRate(stepRate(pendingRate ?? snapshot.settings.rate, delta));
@@ -219,8 +221,8 @@ export const mountDeck = (root, { compact = false, onReadAlong = null } = {}) =>
       const result = await send("skipItem");
       if (!result.ok && result.message) toast(result.message);
     },
-    slower: () => changeRate(-0.1),
-    faster: () => changeRate(0.1),
+    slower: () => changeRate(-RATE_STEP),
+    faster: () => changeRate(RATE_STEP),
     retry: () => send("play"),
     dismiss: () => send("dismissError"),
     speed: () => {
@@ -235,9 +237,8 @@ export const mountDeck = (root, { compact = false, onReadAlong = null } = {}) =>
       place(els.voicePop, els.voiceChip);
       (els.voicePop.querySelector("[aria-checked='true']") || els.voicePop.querySelector(".voice-option"))?.focus();
     },
-    sleep: async () => {
-      const { openMenu } = await import("./common.js");
-      const set = (value, label) => ({ icon: "moon", label, run: async () => {
+    sleep: () => {
+      const set =(value, label) => ({ icon: "moon", label, run: async () => {
         await send("sleep", value);
         toast(value ? `Sleep timer: ${label.toLowerCase()}` : "Sleep timer off");
       } });
@@ -252,8 +253,7 @@ export const mountDeck = (root, { compact = false, onReadAlong = null } = {}) =>
 
   root.addEventListener("click", (event) => {
     const button = event.target.closest("[data-act]");
-    if (button && !button.closest(".popover") && act[button.dataset.act]) act[button.dataset.act]();
-    else if (button && button.closest(".popover") && act[button.dataset.act]) act[button.dataset.act]();
+    if (button && act[button.dataset.act]) act[button.dataset.act]();
   });
 
   const seekFraction = (fraction) => {
@@ -403,11 +403,7 @@ export const mountDeck = (root, { compact = false, onReadAlong = null } = {}) =>
       return;
     }
     if (message.t === "word" && current.pos && message.b === current.pos.b && message.s === current.pos.s) {
-      const spokenIndex = wordIndexAt(message.spoken, message.c);
-      const spokenWords = (message.spoken.match(/\S+/g) || []).length;
-      const displayWords = (current.text.match(/\S+/g) || []).length;
-      const index = spokenWords === displayWords ? spokenIndex : Math.round((spokenIndex / Math.max(1, spokenWords)) * displayWords);
-      renderSentence(els.now, current.text, Math.max(0, Math.min(displayWords - 1, index)));
+      renderSentence(els.now, current.text, displayWordIndex(message.spoken, message.c, current.text));
     }
   };
 
@@ -416,5 +412,5 @@ export const mountDeck = (root, { compact = false, onReadAlong = null } = {}) =>
     els.read?.setAttribute("aria-pressed", String(value));
   };
 
-  return { update, onSpeech, changeRate, setReadAlong, refreshVoices: () => loadVoices(true) };
+  return { update, onSpeech, slower: () => changeRate(-RATE_STEP), faster: () => changeRate(RATE_STEP), setReadAlong, refreshVoices: () => loadVoices(true) };
 };
