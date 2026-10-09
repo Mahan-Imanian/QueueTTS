@@ -11,7 +11,7 @@
 | Documentation sites, essays, table-layout pages | |
 | Any selection, and any pasted text | |
 
-Checked on live pages: Wikipedia, paulgraham.com, MDN, two GitHub READMEs, martinfowler.com and Guardian articles. The test suite covers the same layouts with offline fixtures.
+Checked by hand on live pages before the 3.1.0 release (October 2026): Wikipedia, paulgraham.com, MDN, two GitHub READMEs, martinfowler.com and Guardian articles. Sites change their markup, so treat that as a snapshot. The end-to-end tests cover the same layouts with offline fixtures in `test/fixtures`.
 
 ## Browser compatibility
 
