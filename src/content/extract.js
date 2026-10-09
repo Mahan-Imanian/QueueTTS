@@ -282,10 +282,14 @@
       unmark();
     }
     clone.querySelectorAll("[data-qtts-hidden]").forEach((element) => element.remove());
-    const article = new Readability(clone, { charThreshold: 300, keepClasses: false }).parse();
-    if (!article?.content) return null;
-    const container = new DOMParser().parseFromString(`<div>${article.content}</div>`, "text/html").body.firstElementChild;
-    return { article, blocks: toBlocks(container) };
+    try {
+      const article = new Readability(clone, { charThreshold: 300, keepClasses: false }).parse();
+      if (!article?.content) return null;
+      const container = new DOMParser().parseFromString(`<div>${article.content}</div>`, "text/html").body.firstElementChild;
+      return { article, blocks: toBlocks(container) };
+    } catch {
+      return null;
+    }
   };
 
   const viaFallback = () => {

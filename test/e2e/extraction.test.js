@@ -125,6 +125,24 @@ test("Selected text keeps its paragraphs and gets a readable title", async () =>
   assert.match(item.title, /^For most of the twentieth century/);
 });
 
+test("If Readability throws, capture falls back to the visible-DOM extractor", async () => {
+  const page = await app.fixture("https://metroreview.example/readability-broken", "news.html");
+  const tabId = await app.tabId(page);
+  await app.control.evaluate((tabId) => chrome.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      DOMParser.prototype.parseFromString = () => {
+        throw new Error("parser broke");
+      };
+    }
+  }), tabId);
+  const result = await app.send("capture", tabId, "page", "end");
+  await page.close();
+  assert.equal(result.ok, true, result.message);
+  const doc = (await app.storage(`doc:${result.item.id}`))[`doc:${result.item.id}`];
+  contains(doc.blocks.map((block) => block.t).join("\n"), ["For most of the twentieth century"]);
+});
+
 test("Adding the same page twice does not duplicate it", async () => {
   const first = await capture("https://metroreview.example/dupe?utm_source=x", "news.html");
   const second = await capture("https://metroreview.example/dupe", "news.html");
