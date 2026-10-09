@@ -4,7 +4,11 @@
   const BLOCK = new Set(["ADDRESS", "ARTICLE", "ASIDE", "BLOCKQUOTE", "DD", "DETAILS", "DIALOG", "DIV", "DL", "DT", "FIELDSET", "FIGCAPTION", "FIGURE", "FOOTER", "FORM", "H1", "H2", "H3", "H4", "H5", "H6", "HEADER", "HGROUP", "HR", "LI", "MAIN", "NAV", "OL", "P", "PRE", "SECTION", "SUMMARY", "TABLE", "TBODY", "TD", "TFOOT", "TH", "THEAD", "TR", "UL", "CENTER"]);
   const ALWAYS_SKIP = "script,style,noscript,template,svg,canvas,iframe,video,audio,picture,img,button,input,select,textarea,form,nav,dialog,math,[hidden],[aria-hidden='true'],[role='navigation'],[role='button'],[role='toolbar'],[role='search'],[role='dialog'],[role='complementary'],.sr-only,.visually-hidden,.screen-reader-text";
   const UI_LABEL = /^(was this (page|article|doc|guide) helpful( to you)?\??|did (you find this|this) help(ful)?\??|share|share this( article| story)?|tweet|print|email|copy link|save|skip to (main )?content|skip navigation|advertisement|sponsored( content)?|read more|continue reading|subscribe( now)?|sign up|sign in|log in|cookie settings?|accept( all)?( cookies)?|reject all|manage (cookies|preferences)|menu|close|loading\.*|back to top|table of contents|contents|edit|edit this page|view source|listen to (this )?article|related( articles| stories)?|more from .*|follow us|advertisement\s*-\s*scroll to continue)$/i;
-  const END_SECTION = /^(references|notes|footnotes|citations|sources|bibliography|external links|see also|further reading|related articles|works cited)$/i;
+  const MIN_ARTICLE_WORDS = 30;
+  const ENOUGH_WORDS = 60;
+  const LISTING_MAX_WORDS = 180;
+  const PROSE_PARAGRAPH_WORDS = 12;
+  const END_SECTION =/^(references|notes|footnotes|citations|sources|bibliography|external links|see also|further reading|related articles|works cited)$/i;
 
   const space = (value) => String(value || "").replace(/[   ]/g, " ").replace(/[​-‍﻿]/g, "").replace(/[ \t\r\f\v]+/g, " ");
   const tidy = (value) => space(value).replace(/\s*\n\s*/g, " ").replace(/\s{2,}/g, " ").replace(/\s+([,.;:!?)\]])/g, "$1").replace(/([(\[])\s+/g, "$1").trim();
@@ -315,7 +319,7 @@
         title = adapter.title() || "";
       }
     }
-    if (countWords(blocks) < 60) {
+    if (countWords(blocks) < ENOUGH_WORDS) {
       const result = viaReadability();
       if (result && countWords(result.blocks) >= countWords(blocks)) {
         blocks = result.blocks;
@@ -323,17 +327,17 @@
         title = title || result.article.title;
       }
     }
-    if (countWords(blocks) < 60) {
+    if (countWords(blocks) < ENOUGH_WORDS) {
       const fallback = viaFallback();
       if (countWords(fallback) > countWords(blocks)) blocks = fallback;
     }
     title = cleanTitle(title || meta("meta[property='og:title']") || document.querySelector("h1")?.textContent || document.title || location.hostname);
     blocks = scrub(dropLeadingTitle(blocks, title));
     const total = countWords(blocks);
-    if (total < 30) return { ok: false, reason: "empty", message: "There's no article text on this page to read." };
+    if (total < MIN_ARTICLE_WORDS) return { ok: false, reason: "empty", message: "There's no article text on this page to read." };
     const headings = blocks.filter((block) => block.k === "h").length;
-    const prose = blocks.filter((block) => (block.k === "p" || block.k === "q") && words(block.t) >= 12).length;
-    if (total < 180 && headings >= prose) return { ok: false, reason: "listing", message: "This looks like a list of articles. Open the one you want, then add it." };
+    const prose = blocks.filter((block) => (block.k === "p" || block.k === "q") && words(block.t) >= PROSE_PARAGRAPH_WORDS).length;
+    if (total < LISTING_MAX_WORDS && headings >= prose) return { ok: false, reason: "listing", message: "This looks like a list of articles. Open the one you want, then add it." };
     return {
       ok: true,
       doc: {
