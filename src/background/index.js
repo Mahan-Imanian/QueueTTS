@@ -21,7 +21,7 @@ const SAMPLE = {
   blocks: [
     { k: "p", t: "This is QueueTTS reading to you. Everything you add goes into a queue, and the queue plays in order, one article after another." },
     { k: "h", t: "Adding things", l: 2 },
-    { k: "p", t: "Press Alt Shift A on any article to add it. If you select text first, only the selection is added. You can also right-click a page, or open the toolbar button." },
+    { k: "p", t: "Press Alt Shift S on any article to add it. If you select text first, only the selection is added. You can also right-click a page, or open the toolbar button." },
     { k: "h", t: "Picking up where you left off", l: 2 },
     { k: "p", t: "Pause whenever you like. When you come back, even after restarting Chrome, playback resumes from the sentence you stopped on." },
     { k: "p", t: "Your queue, and everything in it, stays on this computer." }
