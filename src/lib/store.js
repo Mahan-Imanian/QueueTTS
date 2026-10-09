@@ -1,4 +1,4 @@
-import { emptyQueue } from "./queue.js";
+import { emptyQueue, mergeQueues } from "./queue.js";
 import { canonicalUrl, CPS_DEFAULT, normalizeSpace, siteFromUrl, wordCount } from "./text.js";
 
 export const SCHEMA = 3;
@@ -163,11 +163,14 @@ export const migrateLegacy = (legacy) => {
   const settings = legacy?.settings || {};
   const items = [];
   const docs = {};
+  const seen = new Set();
   for (const old of Array.isArray(legacy?.queue) ? legacy.queue : []) {
     if (!old || old.state === "failed" || !old.text) continue;
     const blocks = blocksFromText(old.text);
     if (!blocks.length) continue;
-    const meta = metaFromDoc({ blocks }, { id: old.id, url: old.sourceUrl, title: old.title, source: ["selection", "page"].includes(old.sourceType) ? old.sourceType : "paste" });
+    const id = typeof old.id === "string" && old.id && !seen.has(old.id) ? old.id : undefined;
+    const meta = metaFromDoc({ blocks }, { id, url: old.sourceUrl, title: old.title, source: ["selection", "page"].includes(old.sourceType) ? old.sourceType : "paste" });
+    seen.add(meta.id);
     meta.addedAt = Number(old.capturedAt) || Date.now();
     if (old.state === "completed") Object.assign(meta, { status: "done", finishedAt: Number(old.completedAt) || meta.addedAt, progress: 1 });
     items.push(meta);
@@ -178,5 +181,49 @@ export const migrateLegacy = (legacy) => {
     settings: normalizeSettings({ voice: settings.voiceName, rate: settings.rate, pitch: settings.pitch, volume: settings.volume, theme: settings.theme, pronunciations, onboarded: true }),
     queue: { items },
     docs
+  };
+};
+
+const BLOCK_KINDS = new Set(["p", "h", "li", "q", "code"]);
+const EMPTY_BLOCK = { k: "p", t: "" };
+
+export const normalizeBlocks = (blocks) => (Array.isArray(blocks) ? blocks : []).map((block) => {
+  if (!block || typeof block.t !== "string" || !BLOCK_KINDS.has(block.k)) return { ...EMPTY_BLOCK };
+  return block.k === "h" ? { k: "h", t: block.t, l: Number.isInteger(block.l) ? block.l : 2 } : { k: block.k, t: block.t };
+});
+
+const NOT_AN_EXPORT = "That file isn’t a QueueTTS export.";
+
+export const parseExport = (text) => {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return { ok: false, message: NOT_AN_EXPORT };
+  }
+  if (data?.product === "QueueTTS" && data.state && typeof data.state === "object") {
+    const legacy = migrateLegacy(data.state);
+    return { ok: true, queue: legacy.queue, docs: Object.fromEntries(Object.entries(legacy.docs).map(([key, doc]) => [key.slice(docKey("").length), doc])) };
+  }
+  if (data?.app !== "QueueTTS" || !Array.isArray(data.queue?.items)) return { ok: false, message: NOT_AN_EXPORT };
+  if (typeof data.schema === "number" && data.schema > SCHEMA) return { ok: false, message: "That file comes from a newer version of QueueTTS. Update QueueTTS, then import it again." };
+  if (data.schema !== SCHEMA) return { ok: false, message: NOT_AN_EXPORT };
+  return { ok: true, queue: data.queue, docs: data.docs && typeof data.docs === "object" ? data.docs : {} };
+};
+
+export const planImport = (queue, payload) => {
+  const incoming = normalizeQueue(payload?.queue);
+  const { queue: merged, added } = mergeQueues(queue, incoming);
+  const docs = new Map();
+  for (const item of added) {
+    const source = payload.docs && Object.hasOwn(payload.docs, item.id) ? payload.docs[item.id] : null;
+    const blocks = normalizeBlocks(source?.blocks);
+    if (blocks.some((block) => block.t.trim())) docs.set(item.id, { blocks });
+  }
+  return {
+    queue: { ...merged, items: merged.items.filter((item) => !added.includes(item) || docs.has(item.id)) },
+    docs,
+    added: docs.size,
+    skipped: incoming.items.length - docs.size
   };
 };
