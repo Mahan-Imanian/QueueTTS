@@ -1,5 +1,5 @@
-import { addItem, clearHistory, findByUrl, findItem, markDone, markUnplayed, mergeQueues, moveQueued, moveToFront, nextAfter, queuedItems, removeItem, updateItem } from "../lib/queue.js";
-import { blocksFromText, defaultPlayer, docKey, KEYS, LEGACY_KEY, metaFromDoc, migrateLegacy, normalizeQueue, normalizeSettings, readAll, readDoc, SCHEMA, StorageError, write } from "../lib/store.js";
+import { addItem, clearHistory, findByUrl, findItem, markDone, markUnplayed, moveQueued, moveToFront, nextAfter, queuedItems, removeItem, updateItem } from "../lib/queue.js";
+import { blocksFromText, defaultPlayer, docKey, KEYS, LEGACY_KEY, metaFromDoc, migrateLegacy, normalizeSettings, planImport, readAll, readDoc, SCHEMA, StorageError, write } from "../lib/store.js";
 import { buildPlan, canonicalUrl, localDay, progressAt, toSpeech, unitIndex } from "../lib/text.js";
 import { pickVoice, preferredVoiceName } from "../lib/voices.js";
 
@@ -653,22 +653,15 @@ const updateSettings = async (patch) => {
   return { ok: true, settings: state.settings };
 };
 
-const importData = async ({ queue, docs, settings }) => {
-  const incoming = normalizeQueue(queue);
-  const { queue: merged, added } = mergeQueues(state.queue, incoming);
-  const usable = added.filter((item) => docs?.[item.id]?.blocks?.length);
-  const keep = new Set(usable.map((item) => item.id));
-  state.queue = { ...merged, items: merged.items.filter((item) => !added.includes(item) || keep.has(item.id)) };
+const importData = async (payload) => {
+  const plan = planImport(state.queue, payload);
+  state.queue = plan.queue;
   const values = { [KEYS.queue]: state.queue };
-  for (const item of usable) values[docKey(item.id)] = { blocks: docs[item.id].blocks };
-  if (settings) {
-    state.settings = normalizeSettings({ ...state.settings, ...settings, onboarded: true });
-    values[KEYS.settings] = state.settings;
-  }
+  for (const [id, doc] of plan.docs) values[docKey(id)] = doc;
   await persist(values);
   if (!state.player.itemId && queuedItems(state.queue).length) await setPlayer({ itemId: queuedItems(state.queue)[0].id, status: "paused" });
   updateBadge();
-  return { ok: true, added: usable.length, skipped: incoming.items.length - usable.length };
+  return { ok: true, added: plan.added, skipped: plan.skipped };
 };
 
 const resetAll = async () => {

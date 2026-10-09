@@ -1,7 +1,9 @@
-import { normalizeQueue } from "../lib/store.js";
+import { docKey, normalizeQueue, parseExport, planImport, SCHEMA } from "../lib/store.js";
 import { baseLang, describeVoice as voiceInfo, languageName, rankVoices } from "../lib/voices.js";
 import { $, applyTheme, createStore, escape, h, historyItems, icon, isActive, queuedItems, send, speedLabel, toast } from "./common.js";
 import { preview } from "./deck.js";
+
+const IMPORT_BATCH_ITEMS = 50;
 
 const els = {
   voiceLang: $("#voiceLang"),
@@ -210,9 +212,8 @@ els.pronForm.addEventListener("submit", (event) => {
 $("#editShortcuts").addEventListener("click", () => chrome.tabs.create({ url: "chrome://extensions/shortcuts" }));
 
 $("#export").addEventListener("click", async () => {
-  const keys = store.queue.items.map((item) => `doc:${item.id}`);
-  const docs = await chrome.storage.local.get(keys);
-  const payload = { app: "QueueTTS", schema: 3, exportedAt: new Date().toISOString(), settings: store.settings, queue: store.queue, docs: Object.fromEntries(store.queue.items.map((item) => [item.id, docs[`doc:${item.id}`]]).filter(([, doc]) => doc)) };
+  const docs = await chrome.storage.local.get(store.queue.items.map((item) => docKey(item.id)));
+  const payload = { app: "QueueTTS", schema: SCHEMA, exportedAt: new Date().toISOString(), settings: store.settings, queue: store.queue, docs: Object.fromEntries(store.queue.items.map((item) => [item.id, docs[docKey(item.id)]]).filter(([, doc]) => doc)) };
   const url = URL.createObjectURL(new Blob([JSON.stringify(payload)], { type: "application/json" }));
   const link = h("a", { href: url, download: `queuetts-${new Date().toISOString().slice(0, 10)}.json` });
   link.click();
@@ -225,21 +226,20 @@ $("#importFile").addEventListener("change", async () => {
   const file = $("#importFile").files[0];
   $("#importFile").value = "";
   if (!file) return;
-  let data;
-  try {
-    data = JSON.parse(await file.text());
-  } catch {
-    return toast("That file isn’t a QueueTTS export.");
+  const parsed = parseExport(await file.text());
+  if (!parsed.ok) return toast(parsed.message);
+  const fresh = planImport(store.queue, parsed).added;
+  if (!fresh) return toast("Everything in that file is already here, or has no readable text.");
+  if (!(await ask("Import queue", `Add ${fresh} ${fresh === 1 ? "item" : "items"} from this file to your queue? Nothing you have now is replaced.`, "Import"))) return;
+  const items = normalizeQueue(parsed.queue).items;
+  let added = 0;
+  for (let start = 0; start < items.length; start += IMPORT_BATCH_ITEMS) {
+    const batch = items.slice(start, start + IMPORT_BATCH_ITEMS);
+    const result = await send("importData", { queue: { items: batch }, docs: Object.fromEntries(batch.map((item) => [item.id, parsed.docs[item.id]])) });
+    if (!result.ok) return toast(`${added ? `Imported ${added}, then stopped: ` : ""}${result.message || "Import failed."}`);
+    added += result.added;
   }
-  if (data?.app !== "QueueTTS" || !data.queue) return toast("That file isn’t a QueueTTS export.");
-  const incoming = normalizeQueue(data.queue);
-  const known = new Set(store.queue.items.map((item) => item.id));
-  const fresh = incoming.items.filter((item) => !known.has(item.id)).length;
-  if (!fresh) return toast("Everything in that file is already here.");
-  const keepSettings = await ask("Import queue", `Add ${fresh} ${fresh === 1 ? "item" : "items"} from this file to your queue? Nothing you have now is replaced.`, "Import");
-  if (!keepSettings) return;
-  const result = await send("importData", { queue: data.queue, docs: data.docs || {} });
-  toast(result.ok ? `Imported ${result.added} ${result.added === 1 ? "item" : "items"}` : result.message || "Import failed.");
+  toast(`Imported ${added} ${added === 1 ? "item" : "items"}`);
 });
 
 $("#clearHistory").addEventListener("click", async () => {
