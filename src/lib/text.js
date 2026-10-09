@@ -1,11 +1,16 @@
 const ABBREVIATIONS = new Set([
-  "mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st", "vs", "etc", "e.g", "i.e", "cf", "al", "no", "nos", "fig", "figs",
-  "approx", "inc", "ltd", "co", "corp", "dept", "est", "vol", "ed", "eds", "pp", "op", "gen", "gov", "rep", "sen", "mt",
+  "mr", "mrs", "ms", "dr", "prof", "st", "vs", "e.g", "i.e", "cf", "fig", "figs",
+  "approx", "dept", "est", "vol", "ed", "eds", "pp", "op", "gen", "gov", "rep", "sen", "mt",
   "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec",
-  "u.s", "u.k", "u.n", "e.u", "a.m", "p.m", "ph.d", "b.a", "m.a", "d.c"
+  "u.s", "u.k", "u.n", "e.u", "ph.d", "b.a", "m.a", "d.c"
 ]);
 
-const MAX_SENTENCE = 280;
+const NUMBER_ABBREVIATIONS = new Set(["no", "nos"]);
+
+const MAX_SENTENCE_CHARS = 280;
+const MIN_CLAUSE_CUT_CHARS = 120;
+const MIN_WORD_CUT_CHARS = 80;
+const CLAUSE_BREAK = /(?<=[;:,])\s|\s(?=[–—]\s)|(?<=[，；：、])/g;
 
 export const CPS_DEFAULT = 15;
 
@@ -26,21 +31,27 @@ const segmenterFor = (lang) => {
   return segmenters.get(key);
 };
 
-const endsWithAbbreviation = (sentence) => {
-  const match = sentence.trimEnd().match(/(?:^|[\s("'“‘])([\p{L}][\p{L}.]*)\.$/u);
-  if (!match) return false;
-  const token = match[1];
-  return ABBREVIATIONS.has(token.toLowerCase()) || /^\p{Lu}$/u.test(token);
+const abbreviationBefore = (sentence) => sentence.trimEnd().match(/(?:^|[\s("'“‘])([\p{L}][\p{L}.]*)\.$/u)?.[1] || "";
+
+const shouldJoin = (previous, next) => {
+  const start = next.trimStart();
+  if (/^\p{Ll}/u.test(start)) return true;
+  const token = abbreviationBefore(previous);
+  if (!token) return false;
+  const lower = token.toLowerCase();
+  if (NUMBER_ABBREVIATIONS.has(lower)) return /^\p{N}/u.test(start);
+  return ABBREVIATIONS.has(lower) || /^\p{Lu}$/u.test(token);
 };
 
-const shouldJoin = (previous, next) => endsWithAbbreviation(previous) || /^[\p{Ll}]/u.test(next.trimStart());
-
 const splitLong = (sentence) => {
-  if (sentence.length <= MAX_SENTENCE) return [sentence];
-  const window = sentence.slice(120, MAX_SENTENCE);
-  const breakAt = Math.max(window.lastIndexOf("; "), window.lastIndexOf(": "), window.lastIndexOf(", "), window.lastIndexOf(" – "), window.lastIndexOf(" — "));
-  const cut = breakAt >= 0 ? 120 + breakAt + 1 : sentence.lastIndexOf(" ", MAX_SENTENCE) > 80 ? sentence.lastIndexOf(" ", MAX_SENTENCE) : MAX_SENTENCE;
-  return [sentence.slice(0, cut).trim(), ...splitLong(sentence.slice(cut).trim())].filter(Boolean);
+  if (sentence.length <= MAX_SENTENCE_CHARS) return [sentence];
+  const window = sentence.slice(MIN_CLAUSE_CUT_CHARS, MAX_SENTENCE_CHARS);
+  const clause = [...window.matchAll(CLAUSE_BREAK)].at(-1);
+  const space = sentence.lastIndexOf(" ", MAX_SENTENCE_CHARS);
+  const cut = clause ? MIN_CLAUSE_CUT_CHARS + clause.index : space > MIN_WORD_CUT_CHARS ? space : MAX_SENTENCE_CHARS;
+  const rest = sentence.slice(cut).trim();
+  if (!/[\p{L}\p{N}]/u.test(rest)) return [sentence];
+  return [sentence.slice(0, cut).trim(), ...splitLong(rest)];
 };
 
 export const splitSentences = (text, lang = "en") => {
@@ -82,8 +93,8 @@ export const toSpeech = (text, pronunciations = [], { lang = "en", close = false
   const english = /^en\b/i.test(lang || "en");
   let spoken = stripCitations(text)
     .replace(/\p{Extended_Pictographic}️?/gu, "")
-    .replace(/\bhttps?:\/\/(?:www\.)?([^\s/?#]+)[^\s]*/gi, "$1")
-    .replace(/\bwww\.([^\s/?#]+)[^\s]*/gi, "$1")
+    .replace(/\bhttps?:\/\/(?:www\.)?([^\s/?#]+?)(?:[/?#]\S*?)?(?=[.,;:!?)\]}"'”’]*(?:\s|$))/gi, "$1")
+    .replace(/\bwww\.([^\s/?#]+?)(?:[/?#]\S*?)?(?=[.,;:!?)\]}"'”’]*(?:\s|$))/gi, "$1")
     .replace(/`([^`]+)`/g, "$1")
     .replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (match, year, month, day) => spokenDate(year, month, day, lang) || match)
     .replace(/(\d)\s*[–—]\s*(\d)/g, english ? "$1 to $2" : "$1–$2")

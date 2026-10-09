@@ -17,6 +17,43 @@ test("decimals, quotes and ellipses", () => {
   assert.deepEqual(parts.length, 3);
 });
 
+test("abbreviations that often end a sentence do not swallow the next one", () => {
+  assert.deepEqual(splitSentences("They met at 5 p.m. The sun had set."), ["They met at 5 p.m.", "The sun had set."]);
+  assert.deepEqual(splitSentences("Apples, pears, etc. Then we left."), ["Apples, pears, etc.", "Then we left."]);
+  assert.deepEqual(splitSentences("Apples, pears, etc. and more."), ["Apples, pears, etc. and more."]);
+  assert.deepEqual(splitSentences("He said no. Then he left."), ["He said no.", "Then he left."]);
+  assert.deepEqual(splitSentences("See No. 5 for details. Done."), ["See No. 5 for details.", "Done."]);
+  assert.deepEqual(splitSentences("Dr. Smith arrived. He sat."), ["Dr. Smith arrived.", "He sat."]);
+  assert.deepEqual(splitSentences("The U.S. Senate voted. Then it adjourned."), ["The U.S. Senate voted.", "Then it adjourned."]);
+});
+
+test("numbers, brackets, emails and URLs do not break sentences", () => {
+  assert.deepEqual(splitSentences("Pi is 3.14 and the bill was $1,234.56 in total. Next."), ["Pi is 3.14 and the bill was $1,234.56 in total.", "Next."]);
+  assert.deepEqual(splitSentences("Wait... what happened? Nothing."), ["Wait... what happened?", "Nothing."]);
+  assert.deepEqual(splitSentences("(It was late.) \"Stop.\" Then dawn."), ["(It was late.)", "\"Stop.\"", "Then dawn."]);
+  assert.deepEqual(splitSentences("Mail a.b@example.co.uk or see https://example.com/a.b?x=1 today. Done."), ["Mail a.b@example.co.uk or see https://example.com/a.b?x=1 today.", "Done."]);
+});
+
+test("empty, whitespace-only and CJK text", () => {
+  assert.deepEqual(splitSentences(""), []);
+  assert.deepEqual(splitSentences(" \n\t "), []);
+  assert.deepEqual(splitSentences("这是第一句。这是第二句！", "zh"), ["这是第一句。", "这是第二句！"]);
+  const plan = buildPlan({ blocks: [{ k: "p", t: "   " }, { k: "p", t: "" }, { k: "p" }, { k: "p", t: "Real text." }] });
+  assert.deepEqual(plan.units.map((unit) => [unit.b, unit.text]), [[3, "Real text."]]);
+});
+
+test("long text without spaces splits at CJK clause marks and never leaves a punctuation-only part", () => {
+  const unbroken = "这是一个非常长的句子没有空格".repeat(40) + "。";
+  const parts = splitSentences(unbroken, "zh");
+  assert.ok(parts.every((part) => /[\p{L}\p{N}]/u.test(part)));
+  assert.equal(parts.join(""), unbroken);
+  const clauses = Array.from({ length: 30 }, (_, i) => `第${i}个分句的内容`).join("，") + "。";
+  const split = splitSentences(clauses, "zh");
+  assert.ok(split.length > 1);
+  assert.ok(split.slice(0, -1).every((part) => part.endsWith("，")));
+  assert.equal(split.join(""), clauses);
+});
+
 test("very long sentences are split at clause boundaries", () => {
   const long = Array.from({ length: 30 }, (_, i) => `clause number ${i}`).join(", ") + ".";
   const parts = splitSentences(long);
@@ -29,6 +66,16 @@ test("citations, URLs and markup are not spoken", () => {
   assert.equal(stripCitations("Speech synthesis[1] is old.[12][citation needed]"), "Speech synthesis is old.");
   assert.equal(toSpeech("See https://www.example.com/a/b?c=1 for more."), "See example.com for more.");
   assert.equal(toSpeech("Use `npm test`, e.g., daily."), "Use npm test, for example, daily.");
+});
+
+test("URLs keep the punctuation that follows them", () => {
+  assert.equal(toSpeech("Visit https://example.com/path, then go."), "Visit example.com, then go.");
+  assert.equal(toSpeech("See www.example.com/foo."), "See example.com.");
+  assert.equal(toSpeech("Open (https://example.com/a.b?c=1)."), "Open (example.com).");
+  assert.equal(toSpeech("Visit https://example.com."), "Visit example.com.");
+  assert.equal(toSpeech("Write to john.doe@example.com today."), "Write to john.doe@example.com today.");
+  assert.equal(toSpeech("It costs 1,234.56 dollars, about 3.14 each."), "It costs 1,234.56 dollars, about 3.14 each.");
+  assert.equal(toSpeech("   "), "");
 });
 
 test("speech clean-up handles dates, ranges, symbols, emoji and abbreviations without changing meaning", () => {
