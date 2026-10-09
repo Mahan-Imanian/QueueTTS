@@ -1,6 +1,7 @@
 import { findItem } from "../lib/queue.js";
-import { wordCount, wordIndexAt } from "../lib/text.js";
-import { $, announce, applyTheme, connectSpeech, createStore, escape, formatDuration, h, historyItems, icon, isActive, itemRemaining, keyed, openMenu, queuedItems, send, sourceLabel, toast, typing, weekSummary } from "./common.js";
+import { docKey } from "../lib/store.js";
+import { localDay, MIN_SELECTION_WORDS, planKey, wordCount } from "../lib/text.js";
+import { $, announce, applyTheme, connectSpeech, createStore, displayWordIndex, escape, formatDuration, h, historyItems, icon, isActive, itemRemaining, keyed, openMenu, queuedItems, renderHealth, renderSentence, send, sourceLabel, toast, typing, weekSummary } from "./common.js";
 import { mountDeck, planFor } from "./deck.js";
 import { createRow, historyDay, updateRow } from "./rows.js";
 
@@ -40,6 +41,8 @@ $("#wayMenu").innerHTML = icon("doc", "sm");
 $("#wayShortcut").innerHTML = icon("plus", "sm");
 
 const HISTORY_PAGE = 30;
+const SUMMARY_MIN_MS = 60000;
+const MANUAL_SCROLL_HOLD_MS = 3500;
 let store = null;
 let query = "";
 let readAlong = false;
@@ -91,10 +94,10 @@ const renderTop = () => {
   els.caughtUp.hidden = hasCurrent || queued.length > 0 || history.length === 0;
   if (!els.caughtUp.hidden) {
     const week = weekSummary(store.stats);
-    const today = store.stats.days[new Date().toLocaleDateString("en-CA")] || {};
+    const today = store.stats.days[localDay()] || {};
     const parts = [];
     if (today.finished) parts.push(`${today.finished} finished today`);
-    if (week.ms > 60000) parts.push(`${formatDuration(week.ms / 1000)} listened this week`);
+    if (week.ms > SUMMARY_MIN_MS) parts.push(`${formatDuration(week.ms / 1000)} listened this week`);
     els.caughtText.textContent = `${parts.length ? `${parts.join(" · ")}. ` : ""}Add a page and it plays next.`;
   }
 };
@@ -119,7 +122,7 @@ const renderHistory = () => {
   const total = historyItems(store.queue).length;
   els.doneHead.hidden = total === 0;
   const week = weekSummary(store.stats);
-  els.doneMeta.textContent = week.ms > 60000 ? `${formatDuration(week.ms / 1000)} this week` : total ? String(total) : "";
+  els.doneMeta.textContent = week.ms > SUMMARY_MIN_MS ? `${formatDuration(week.ms / 1000)} this week` : total ? String(total) : "";
   const shown = items.slice(0, historyLimit);
   const entries = [];
   let day = "";
@@ -153,7 +156,7 @@ const renderReader = async () => {
     return;
   }
   const cache = await planFor(item, store.settings);
-  const key = `${item.id}|${store.settings.readCode}|${store.settings.announceHeadings}`;
+  const key = planKey(item, store.settings);
   if (key !== readerKey && cache.doc && cache.plan) {
     readerKey = key;
     const byBlock = new Map();
@@ -177,7 +180,7 @@ const renderReader = async () => {
   markReader(store.player.pos);
 };
 
-const markReader = (pos, wordIndex = -1, spoken = "") => {
+const markReader = (pos, word = null) => {
   if (!pos || !readAlong) return;
   const target = els.reader.querySelector(`.s[data-b="${pos.b}"][data-s="${pos.s}"]`) || els.reader.querySelector(".s");
   if (!target) return;
@@ -193,19 +196,11 @@ const markReader = (pos, wordIndex = -1, spoken = "") => {
     }
     target.classList.add("now");
     readerNow = target;
-    if (Date.now() - userScrolledAt > 3500) target.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    if (Date.now() - userScrolledAt > MANUAL_SCROLL_HOLD_MS) target.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }
-  if (wordIndex >= 0) {
+  if (word) {
     const text = target.textContent;
-    const spokenWords = (spoken.match(/\S+/g) || []).length;
-    const displayWords = (text.match(/\S+/g) || []).length;
-    const index = Math.min(displayWords - 1, spokenWords === displayWords ? wordIndex : Math.round((wordIndex / Math.max(1, spokenWords)) * displayWords));
-    let count = -1;
-    target.innerHTML = text.split(/(\s+)/).map((part) => {
-      if (!part.trim()) return escape(part);
-      count += 1;
-      return count === index ? `<mark>${escape(part)}</mark>` : escape(part);
-    }).join("");
+    renderSentence(target, text, displayWordIndex(word.spoken, word.c, text));
   }
 };
 
@@ -336,12 +331,12 @@ els.queueList.addEventListener("drop", async (event) => {
 
 els.clearHistory.addEventListener("click", async () => {
   const snapshot = historyItems(store.queue);
-  const docs = await chrome.storage.local.get(snapshot.map((item) => `doc:${item.id}`));
+  const docs = await chrome.storage.local.get(snapshot.map((item) => docKey(item.id)));
   await send("clearHistory");
   toast(`Cleared ${snapshot.length} listened ${snapshot.length === 1 ? "item" : "items"}`, {
     label: "Undo",
     run: async () => {
-      for (const item of [...snapshot].reverse()) await send("restore", { item, doc: docs[`doc:${item.id}`], index: store.queue.items.length });
+      for (const item of [...snapshot].reverse()) await send("restore", { item, doc: docs[docKey(item.id)], index: store.queue.items.length });
     }
   });
 });
@@ -385,7 +380,7 @@ $("#trySample").addEventListener("click", () => send("addSample"));
 els.pasteText.addEventListener("input", () => {
   const count = wordCount(els.pasteText.value);
   els.pasteCount.textContent = count ? `${count} words` : "";
-  els.pasteAdd.disabled = count < 3;
+  els.pasteAdd.disabled = count < MIN_SELECTION_WORDS;
 });
 els.pasteText.addEventListener("keydown", (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && !els.pasteAdd.disabled) {
@@ -413,8 +408,8 @@ document.addEventListener("keydown", (event) => {
   } else if (event.key === "ArrowLeft" && !inList) send("skip", -1);
   else if (event.key === "ArrowRight" && !inList) send("skip", 1);
   else if (key === "n" && !inList) send("skipItem").then((result) => !result.ok && result.message && toast(result.message));
-  else if (event.key === "-" || event.key === "[") deck.changeRate(-0.1);
-  else if (event.key === "=" || event.key === "+" || event.key === "]") deck.changeRate(0.1);
+  else if (event.key === "-" || event.key === "[") deck.slower();
+  else if (event.key === "=" || event.key === "+" || event.key === "]") deck.faster();
   else if (key === "r" && store.player.itemId) setReadAlong(!readAlong);
   else if (event.key === "/") {
     event.preventDefault();
@@ -422,15 +417,6 @@ document.addEventListener("keydown", (event) => {
   } else if (event.key === "?") els.keysDialog.showModal();
   else if (event.key === "Escape" && readAlong) setReadAlong(false);
 });
-
-const renderHealth = () => {
-  const message = store.health?.storage;
-  els.health.hidden = !message;
-  if (message) {
-    els.health.innerHTML = `${icon("alert", "sm")}<p></p>`;
-    els.health.querySelector("p").textContent = message;
-  }
-};
 
 function render(changed = new Set(["player", "queue", "settings", "stats", "health"]), snapshot = store) {
   store = snapshot;
@@ -443,7 +429,7 @@ function render(changed = new Set(["player", "queue", "settings", "stats", "heal
     renderHistory();
   }
   last = { itemId: store.player.itemId, status: store.player.status };
-  if (changed.has("health")) renderHealth();
+  if (changed.has("health")) renderHealth(els.health, store.health);
   if (readAlong && (changed.has("player") || changed.has("queue") || changed.has("settings"))) {
     if (!store.player.itemId) setReadAlong(false);
     else renderReader();
@@ -454,7 +440,7 @@ connectSpeech((message) => {
   deck.onSpeech(message);
   if (!readAlong || message.id !== store.player.itemId) return;
   if (message.t === "unit") markReader({ b: message.b, s: message.s });
-  if (message.t === "word") markReader({ b: message.b, s: message.s }, wordIndexAt(message.spoken, message.c), message.spoken);
+  if (message.t === "word") markReader({ b: message.b, s: message.s }, message);
 });
 
 const shortcuts = Object.fromEntries((await chrome.commands.getAll()).map((command) => [command.name, command.shortcut]));
@@ -464,5 +450,5 @@ els.nextEmpty.dataset.hint = shortcuts["queue-page"] ? `Press ${shortcuts["queue
 $("#globalKeys").textContent = [shortcuts["queue-page"] && `${shortcuts["queue-page"]} adds the current page`, shortcuts["toggle-playback"] && `${shortcuts["toggle-playback"]} plays or pauses`].filter(Boolean).join(" · ") + (shortcuts["queue-page"] ? ", from any tab." : "");
 
 render();
-renderHealth();
+renderHealth(els.health, store.health);
 if (new URLSearchParams(location.search).get("view") === "reader") setReadAlong(true);
