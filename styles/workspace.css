@@ -13,6 +13,7 @@
 }
 
 .brand {
+  margin-block: 0;
   flex: 1;
   margin-left: var(--s-2);
   font-weight: 600;
@@ -1273,4 +1274,8 @@ body.reading .deck .deck-title {
   .play[data-busy="true"]::after {
     animation-duration: 3s;
   }
+}
+
+.popup-main {
+  display: contents;
 }
