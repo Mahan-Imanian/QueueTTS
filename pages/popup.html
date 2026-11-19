@@ -10,10 +10,11 @@
   <body class="popup">
     <header class="bar">
       <img class="mark" src="../assets/icons/mark.svg" alt="" width="18" height="18" />
-      <span class="brand">QueueTTS</span>
+      <h1 class="brand">QueueTTS</h1>
       <button class="icon-btn" id="openPanel" type="button" aria-label="Open the queue in the side panel" title="Open the side panel"></button>
       <button class="icon-btn" id="openSettings" type="button" aria-label="Settings" title="Settings"></button>
     </header>
+    <main class="popup-main">
     <div class="banner" id="health" hidden></div>
     <section class="deck" id="deck" aria-label="Now listening" hidden></section>
     <section class="welcome-deck" id="welcome" hidden aria-labelledby="welcomeTitle">
@@ -45,6 +46,7 @@
       <ol class="queue rail" id="nextList"></ol>
     </section>
     <p class="lane-empty" id="caughtUp" hidden></p>
+    </main>
     <footer class="foot">
       <button class="btn btn-quiet" id="pasteToggle" type="button" aria-expanded="false"></button>
       <span class="meta" id="shortcutHint"></span>

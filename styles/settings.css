@@ -339,6 +339,16 @@
     flex-wrap: wrap;
     gap: var(--s-2);
   }
+  .setting:has(> .switch) {
+    flex-wrap: nowrap;
+    gap: var(--s-4);
+  }
+  .setting > .switch {
+    flex: none;
+  }
+  .setting-text {
+    min-width: 0;
+  }
   .range-row {
     width: 100%;
   }
